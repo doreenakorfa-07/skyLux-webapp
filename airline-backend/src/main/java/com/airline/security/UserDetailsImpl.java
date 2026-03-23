@@ -15,20 +15,22 @@ public class UserDetailsImpl implements UserDetails {
     @JsonIgnore
     private String password;
     private String profilePictureUrl;
+    private boolean blocked;
     private Collection<? extends GrantedAuthority> authorities;
 
-    public UserDetailsImpl(String id, String email, String password, String profilePictureUrl,
+    public UserDetailsImpl(String id, String email, String password, String profilePictureUrl, boolean blocked,
                             Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.email = email;
         this.password = password;
         this.profilePictureUrl = profilePictureUrl;
+        this.blocked = blocked;
         this.authorities = authorities;
     }
 
     public static UserDetailsImpl build(User user) {
         List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(user.getRole()));
-        return new UserDetailsImpl(user.getId(), user.getEmail(), user.getPassword(), user.getProfilePictureUrl(), authorities);
+        return new UserDetailsImpl(user.getId(), user.getEmail(), user.getPassword(), user.getProfilePictureUrl(), user.isBlocked(), authorities);
     }
 
     @Override
@@ -48,7 +50,7 @@ public class UserDetailsImpl implements UserDetails {
     @Override
     public boolean isAccountNonExpired() { return true; }
     @Override
-    public boolean isAccountNonLocked() { return true; }
+    public boolean isAccountNonLocked() { return !blocked; }
     @Override
     public boolean isCredentialsNonExpired() { return true; }
     @Override

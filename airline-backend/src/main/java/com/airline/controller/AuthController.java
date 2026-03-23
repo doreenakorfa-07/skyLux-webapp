@@ -15,11 +15,16 @@ public class AuthController {
 
     @PostMapping("/signin")
     public Map<String, String> authenticateUser(@RequestBody Map<String, String> loginRequest) {
-        return authService.authenticateUser(loginRequest.get("email"), loginRequest.get("password"));
+        return authService.loginUser(loginRequest.get("email"), loginRequest.get("password"));
     }
 
     @PostMapping("/signup")
     public void registerUser(@RequestBody Map<String, String> signUpRequest) {
-        authService.registerUser(signUpRequest.get("email"), signUpRequest.get("password"));
+        authService.registerUser(signUpRequest);
+    }
+
+    @PostMapping("/refresh-token")
+    public Map<String, String> refreshToken(@RequestBody Map<String, String> request) {
+        return authService.refreshToken(request.get("refreshToken"));
     }
 }

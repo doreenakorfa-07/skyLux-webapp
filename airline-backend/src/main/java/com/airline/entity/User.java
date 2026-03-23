@@ -18,6 +18,15 @@ public class User {
 
     private String profilePictureUrl;
 
+    private String firstName;
+    private String lastName;
+    private String otherNames;
+
+    @Indexed(unique = true)
+    private String username;
+
+    private boolean blocked = false; // admin can block/unblock
+
     public User() {}
 
     public User(String id, String email, String password, String role) {
@@ -35,6 +44,17 @@ public class User {
         this.profilePictureUrl = profilePictureUrl;
     }
 
+    public User(String id, String email, String password, String role, String firstName, String lastName, String otherNames, String username) {
+        this.id = id;
+        this.email = email;
+        this.password = password;
+        this.role = role;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.otherNames = otherNames;
+        this.username = username;
+    }
+
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
     public String getEmail() { return email; }
@@ -45,4 +65,16 @@ public class User {
     public void setRole(String role) { this.role = role; }
     public String getProfilePictureUrl() { return profilePictureUrl; }
     public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl; }
+
+    public String getFirstName() { return firstName; }
+    public void setFirstName(String firstName) { this.firstName = firstName; }
+    public String getLastName() { return lastName; }
+    public void setLastName(String lastName) { this.lastName = lastName; }
+    public String getOtherNames() { return otherNames; }
+    public void setOtherNames(String otherNames) { this.otherNames = otherNames; }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+
+    public boolean isBlocked() { return blocked; }
+    public void setBlocked(boolean blocked) { this.blocked = blocked; }
 }

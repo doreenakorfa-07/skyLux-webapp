@@ -1,45 +1,66 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
-import { bookingService, userService, paymentService } from '../services/api';
+import { bookingService, userService, paymentService, authService } from '../services/api';
 import { useToast } from './Toast';
+import Modal from './Modal';
+import SettingsModal from './SettingsModal';
 
 const Profile = () => {
   const [bookings, setBookings] = useState([]);
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [profilePic, setProfilePic] = useState(localStorage.getItem('profilePictureUrl') || '');
   const [uploading, setUploading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [bookingToCancel, setBookingToCancel] = useState(null);
   const { showToast } = useToast();
   const fileInputRef = useRef(null);
-
-  const email = localStorage.getItem('email');
-  const role = localStorage.getItem('role');
-
-  const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+  const hasFetched = useRef(false);
 
   useEffect(() => {
+    if (hasFetched.current) return; // prevent StrictMode double-call
+    hasFetched.current = true;
+
     const fetchData = async () => {
       try {
-        const [bookingsRes, paymentsRes] = await Promise.all([
+        const [bookingsRes, paymentsRes, userRes] = await Promise.all([
           bookingService.getUserBookings(),
-          paymentService.getUserPayments()
+          paymentService.getUserPayments(),
+          userService.getUserProfile()
         ]);
         
         const paymentsMap = paymentsRes.data.reduce((acc, p) => {
           if (p.booking && p.booking.id) {
-            acc[p.booking.id] = p.transactionId;
+            acc[p.booking.id] = { transactionId: p.transactionId, paymentStatus: p.status };
           }
           return acc;
         }, {});
 
         const bookingsWithTxn = bookingsRes.data.map(b => ({
           ...b,
-          transactionId: paymentsMap[b.id] || 'N/A'
+          transactionId: paymentsMap[b.id]?.transactionId || 'N/A',
+          paymentStatus: paymentsMap[b.id]?.paymentStatus || null
         }));
 
         setBookings(bookingsWithTxn);
+        setUserData(userRes.data);
+        
+        if (userRes.data.profilePictureUrl) {
+          setProfilePic(userRes.data.profilePictureUrl);
+          localStorage.setItem('profilePictureUrl', userRes.data.profilePictureUrl);
+        }
       } catch (err) {
-        console.error('Failed to fetch profile data', err);
+        console.error('SkyLux: Failed to fetch profile data', err);
+        if (err.response?.status === 401) {
+          // Session expired — token + refresh token both invalid (e.g. backend restarted)
+          showToast('Your session has expired. Please log in again.', 'error');
+          setTimeout(() => {
+            authService.logout();
+            window.location.href = '/login';
+          }, 2000);
+        } else {
+          showToast('Unable to fetch live profile. Showing cached data.', 'info');
+        }
       } finally {
         setLoading(false);
       }
@@ -48,185 +69,150 @@ const Profile = () => {
   }, []);
 
   const handleImageUpload = async (e) => {
-    console.log('handleImageUpload triggered');
     const file = e.target.files[0];
-    if (!file) {
-      console.log('No file selected');
-      return;
-    }
+    if (!file) return;
 
     setUploading(true);
     const formData = new FormData();
     formData.append('file', file);
 
     try {
-      console.log('Staring upload to backend...');
       const res = await userService.uploadProfilePicture(formData);
-      
       const imageUrl = res.data.profilePictureUrl;
       localStorage.setItem('profilePictureUrl', imageUrl);
       setProfilePic(imageUrl);
-      console.log('Profile picture updated successfully');
       showToast('Profile picture updated!', 'success');
     } catch (err) {
-      console.error('Upload failed with error:', err);
-      if (err.response) {
-        console.error('Backend error response:', err.response.data);
-      }
-      showToast('Failed to upload image. Please check your connection.', 'error');
+      showToast('Failed to upload image.', 'error');
     } finally {
       setUploading(false);
     }
   };
 
-  const handleCancel = async (bookingId) => {
-    if (!window.confirm("Are you sure you want to cancel this booking?")) return;
+  const openCancelModal = (bookingId) => {
+    setBookingToCancel(bookingId);
+    setIsModalOpen(true);
+  };
+
+  const confirmCancel = async () => {
+    if (!bookingToCancel) return;
     try {
-      await bookingService.cancelBooking(bookingId);
+      await bookingService.cancelBooking(bookingToCancel);
       showToast("Booking cancelled successfully.", "success");
-      setBookings(bookings.map(b => b.id === bookingId ? { ...b, status: 'CANCELLED' } : b));
+      setBookings(bookings.map(b => b.id === bookingToCancel ? { ...b, status: 'CANCELLED' } : b));
     } catch (err) {
       showToast("Failed to cancel booking.", "error");
+    } finally {
+      setIsModalOpen(false);
+      setBookingToCancel(null);
     }
   };
 
-  if (loading) return <div className="container">Loading profile...</div>;
+  if (loading) return <div className="loading-state">Personalizing your experience...</div>;
+
+  const displayName = userData?.username || userData?.email || localStorage.getItem('email') || 'Valued Guest';
+  const displayEmail = userData?.email || localStorage.getItem('email');
+  const hasUsername = !!userData?.username;
 
   return (
-    <div className="profile-page container">
-      <h2 style={{ textAlign: 'center', marginBottom: '3rem', fontSize: '2.5rem' }}>My Account</h2>
+    <div className="profile-container fade-in">
+      <h1 className="section-title">Your SkyLux Profile</h1>
       
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
-        {/* User Info Card */}
-        <div className="glass-card" style={{ height: 'fit-content', padding: '2rem' }}>
-          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-            <div 
-              onClick={() => fileInputRef.current.click()}
-              style={{ 
-                width: '120px', 
-                height: '120px', 
-                borderRadius: '50%', 
-                background: 'var(--primary)', 
-                margin: '0 auto 1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '3rem',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                overflow: 'hidden',
-                position: 'relative',
-                border: '4px solid rgba(255,255,255,0.2)',
-                transition: 'transform 0.3s'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
+      <div className="profile-layout">
+        {/* User Sidebar */}
+        <aside className="user-info-card glass-card">
+          <button className="settings-gear-btn" onClick={() => setIsSettingsOpen(true)} title="Account Settings">⚙</button>
+          <div className="avatar-container" onClick={() => fileInputRef.current.click()}>
+            <div className="profile-avatar">
               {profilePic ? (
-                <img src={profilePic} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={profilePic} alt="Profile" />
               ) : (
-                email ? email[0].toUpperCase() : 'U'
-              )}
-              {uploading && (
-                <div style={{ 
-                  position: 'absolute', 
-                  inset: 0, 
-                  background: 'rgba(0,0,0,0.5)', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  fontSize: '0.8rem'
-                }}>
-                  Uploading...
-                </div>
+                displayName[0].toUpperCase()
               )}
             </div>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              style={{ display: 'none' }} 
-              accept="image/*"
-              onChange={handleImageUpload} 
-            />
-            <p style={{ fontSize: '0.8rem', opacity: 0.6, marginBottom: '1rem' }}>Click image to change</p>
-            <h3 style={{ margin: '0' }}>{email}</h3>
-            <p style={{ color: 'var(--secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-              {role === 'ROLE_ADMIN' ? 'Administrator' : 'Frequent Flyer'}
-            </p>
+            <div className="upload-overlay">
+              {uploading ? 'Updating...' : 'Change Photo'}
+            </div>
           </div>
-          <hr style={{ opacity: 0.1, margin: '1.5rem 0' }} />
-          <div style={{ fontSize: '0.9rem' }}>
-            <p><strong>Member Since:</strong> March 2026</p>
-            <p><strong>Status:</strong> Active</p>
+          
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            style={{ display: 'none' }} 
+            accept="image/*"
+            onChange={handleImageUpload} 
+          />
+          
+          <h2 className="user-name">{displayName}</h2>
+          {/* Always show email if it exists and is different from the primary display name */}
+          {displayEmail && displayEmail !== displayName && (
+            <p className="user-email">{displayEmail}</p>
+          )}
+          {/* If they are the same (no username), show only one, but if the user wants BOTH, we can show it here too */}
+          {!hasUsername && displayEmail && (
+            <p className="user-email">{displayEmail}</p>
+          )}
+          
+          <p className="user-role">
+            {userData?.role === 'ROLE_ADMIN' ? 'SkyLux Executive' : 'Elite Voyager'}
+          </p>
+          
+          <div className="user-stats">
+            <div className="stat-item">
+              <span className="stat-label">Member Since</span>
+              <span className="stat-value">March 2026</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-label">Total Journeys</span>
+              <span className="stat-value">{bookings.length}</span>
+            </div>
           </div>
-        </div>
+        </aside>
 
-        {/* Booking History */}
-        <div className="glass-card" style={{ padding: '2rem' }}>
-          <h3 style={{ marginBottom: '1.5rem' }}>Booking History</h3>
-          {loading ? (
-            <p>Loading your journeys...</p>
-          ) : bookings.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '3rem 0' }}>
-              <p style={{ opacity: 0.6 }}>No bookings found yet.</p>
+        {/* Bookings Area */}
+        <main className="history-area">
+          <h3 className="summary-title">Recent Journeys</h3>
+          
+          {bookings.length === 0 ? (
+            <div className="no-flights glass-card">
+              <p>Your passport is looking a bit empty.</p>
               <button 
                 className="btn btn-primary" 
-                style={{ marginTop: '1rem' }}
                 onClick={() => window.location.href = '/flights'}
               >
-                Book Your First Flight
+                Plan Your Next Escape
               </button>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="history-container">
               {bookings.map((booking) => (
-                <div 
-                  key={booking.id} 
-                  style={{ 
-                    padding: '1.5rem', 
-                    borderRadius: '12px', 
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}
-                >
-                  <div>
-                    <h4 style={{ margin: '0 0 0.5rem' }}>
-                      {booking.flight ? `${booking.flight.origin} → ${booking.flight.destination}` : 'Unknown Route (Flight Deleted)'}
+                <div key={booking.id} className="history-item glass-card">
+                  <div className="history-main-info">
+                    <h4>
+                      {booking.flight ? `${booking.flight.origin} to ${booking.flight.destination}` : 'Legendary Route'}
                     </h4>
-                    <p style={{ margin: '0 0 0.25rem', fontSize: '0.85rem', opacity: 0.8 }}>
-                      <strong>Flight:</strong> {booking.flight?.flightNumber || 'N/A'} | <strong>Class:</strong> {booking.flightClass}
-                    </p>
-                    <p style={{ margin: '0', fontSize: '0.85rem', opacity: 0.8 }}>
-                      <strong>Date:</strong> {new Date(booking.bookingDate).toLocaleDateString()} | <strong>Seat:</strong> {booking.seatNumber}
-                    </p>
-                    <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 'bold' }}>
-                      <strong>Txn ID:</strong> {booking.transactionId}
-                    </p>
+                    <div className="history-meta">
+                      <span><strong>Flight:</strong> {booking.flight?.flightNumber || 'SK-000'}</span>
+                      <span><strong>Class:</strong> {booking.flightClass}</span>
+                      <span><strong>Seat:</strong> {booking.seatNumber}</span>
+                    </div>
+                    <span className="txn-id">Transaction #{booking.transactionId}</span>
                   </div>
-                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ 
-                      display: 'inline-block', 
-                      padding: '0.25rem 0.75rem', 
-                      background: booking.status === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
-                      color: booking.status === 'CONFIRMED' ? '#10b981' : '#ef4444', 
-                      borderRadius: '1rem', 
-                      fontSize: '0.8rem',
-                      fontWeight: 'bold',
-                      marginBottom: '0.5rem'
-                    }}>
+
+                  <div className="history-status-area">
+                    <div className={`status-badge ${booking.status === 'CONFIRMED' ? 'status-confirmed' : 'status-cancelled'}`}>
                       {booking.status}
                     </div>
-                    <p style={{ margin: 0, fontWeight: 'bold' }}>Total: ${booking.totalPrice.toFixed(2)}</p>
+                    <div className={`status-badge ${booking.paymentStatus === 'SUCCESS' ? 'payment-success' : booking.paymentStatus === 'FAILED' ? 'payment-failed' : 'payment-pending'}`}>
+                      {booking.paymentStatus === 'SUCCESS' ? '✓ Paid' : booking.paymentStatus === 'FAILED' ? '✕ Payment Failed' : '⏳ Pending'}
+                    </div>
+                    <span className="history-price">${booking.totalPrice.toFixed(2)}</span>
                     {booking.status === 'CONFIRMED' && (
                       <button 
-                        onClick={() => handleCancel(booking.id)}
-                        className="btn btn-secondary" 
-                        style={{ marginTop: '0.5rem', padding: '0.25rem 0.5rem', fontSize: '0.8rem', color: '#ef4444', borderColor: '#ef4444' }}
+                        onClick={() => openCancelModal(booking.id)}
+                        className="cancel-btn-text"
                       >
-                        Cancel Flight
+                        Cancel Reservation
                       </button>
                     )}
                   </div>
@@ -234,8 +220,25 @@ const Profile = () => {
               ))}
             </div>
           )}
-        </div>
+        </main>
       </div>
+
+      <Modal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={confirmCancel}
+        title="Cancel Reservation?"
+        message="Are you sure you want to cancel your flight? This action cannot be undone, and your seat will be released immediately."
+        confirmText="Yes, Cancel"
+        cancelText="Keep Booking"
+      />
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        userData={userData}
+        onUpdate={(updated) => setUserData(updated)}
+      />
     </div>
   );
 };

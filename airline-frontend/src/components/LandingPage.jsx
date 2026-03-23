@@ -15,86 +15,53 @@ const LandingPage = () => {
   ];
 
   return (
-    <div className="landing-page">
-      <section className="hero" style={{ 
-        height: '80vh', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        background: 'linear-gradient(rgba(30, 58, 138, 0.3), rgba(59, 130, 246, 0.3)), url("/images/user_airplane.jpg")',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        borderRadius: '2rem',
-        color: 'white',
-        position: 'relative',
-        overflow: 'hidden',
-        marginBottom: '4rem',
-        textAlign: 'center',
-        padding: '0 2rem'
-      }}>
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          <h1 style={{ fontSize: '4rem', marginBottom: '1rem', fontWeight: '800', letterSpacing: '-0.05em' }}>
+    <div className="landing-container">
+      <header className="hero-section">
+        <div className="hero-content fade-in">
+          <span className="hero-badge">Luxury Meets the Sky</span>
+          <h1 className="hero-title">
             Elevate Your Journey
           </h1>
-          <p style={{ fontSize: '1.5rem', marginBottom: '3rem', opacity: 0.9, maxWidth: '600px', margin: '0 auto 3rem' }}>
-            Experience unparalleled comfort and seamless travel with Antigravity Airways. Your adventure starts here.
+          <p className="hero-subtitle">
+            Experience unparalleled comfort and seamless travel with SkyLux Airways. Your adventure starts here.
           </p>
-          <div style={{ width: '100%', maxWidth: '900px', margin: '0 auto' }}>
+          <div className="search-wrapper">
             <FlightSearch />
           </div>
         </div>
-        <div className="hero-decoration" style={{
-          position: 'absolute',
-          top: '-10%',
-          right: '-5%',
-          width: '500px',
-          height: '500px',
-          background: 'rgba(255,255,255,0.1)',
-          borderRadius: '50%',
-          filter: 'blur(80px)',
-          zIndex: 1
-        }}></div>
-      </section>
+      </header>
 
-      <section className="destinations">
-        <h2 style={{ fontSize: '2.5rem', marginBottom: '2.5rem', textAlign: 'center' }}>Popular Destinations</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
+      <section className="featured-destinations">
+        <h2 className="section-title">Popular Destinations</h2>
+        <div className="destinations-grid">
           {destinations.map((dest, i) => (
-            <div key={i} className="dest-card glass-card" style={{ padding: '0', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.3s' }}
-                 onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-10px)'}
-                 onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-              <img src={dest.image} alt={dest.title} style={{ width: '100%', height: '200px', objectFit: 'cover' }} />
-              <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <h3 style={{ margin: 0 }}>{dest.title}</h3>
-                  <p style={{ margin: '0.25rem 0 0', color: 'var(--secondary)' }}>All inclusive</p>
+            <div key={i} className="dest-card glass-card fade-in" style={{ animationDelay: `${i * 0.1}s` }}>
+              <div className="dest-image-wrapper">
+                <img src={dest.image} alt={dest.title} className="dest-image" />
+                <div className="dest-overlay">
+                  <span className="dest-price">From ${dest.price}</span>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--primary)' }}>${dest.price}</span>
-                  <p style={{ margin: 0, fontSize: '0.8rem' }}>Starting from</p>
-                </div>
+              </div>
+              <div className="dest-info">
+                <h3>{dest.title}</h3>
+                <p>All-inclusive packages starting today.</p>
+                <button onClick={() => navigate('/flights')} className="btn btn-primary btn-sm">
+                  Explore Flights
+                </button>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="cta glass-card" style={{ 
-        marginTop: '6rem', 
-        background: 'var(--primary)', 
-        color: 'white', 
-        padding: '4rem', 
-        textAlign: 'center',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center'
-      }}>
-        <h2 style={{ fontSize: '2.5rem', marginBottom: '1.5rem' }}>Ready to Take Off?</h2>
-        <p style={{ fontSize: '1.2rem', marginBottom: '2.5rem', opacity: 0.9 }}>Join thousands of happy travelers and book your next flight today.</p>
-        <button onClick={() => navigate('/login')} className="btn btn-primary" style={{ background: 'white', color: 'var(--primary)', fontSize: '1.1rem', padding: '1rem 3rem' }}>
-          Get Started Now
-        </button>
+      <section className="cta-section">
+        <div className="cta-card glass-card fade-in">
+          <h2 className="cta-title">Ready to Take Off?</h2>
+          <p className="cta-text">Join thousands of happy travelers and book your next flight today.</p>
+          <button onClick={() => navigate('/register')} className="btn btn-accent">
+            Get Started Now
+          </button>
+        </div>
       </section>
     </div>
   );

@@ -101,6 +101,10 @@ public class BookingService {
         return bookingRepository.findByUser(user);
     }
 
+    public List<Booking> getAllBookings() {
+        return bookingRepository.findAll();
+    }
+
     public List<String> getOccupiedSeats(String flightId) {
         Flight flight = flightRepository.findById(flightId)
                 .orElseThrow(() -> new RuntimeException("Flight not found"));

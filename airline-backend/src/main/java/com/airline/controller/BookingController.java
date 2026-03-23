@@ -34,6 +34,11 @@ public class BookingController {
         return bookingService.getOccupiedSeats(flightId);
     }
 
+    @GetMapping("/all")
+    public List<Booking> getAllBookings() {
+        return bookingService.getAllBookings();
+    }
+
     @PutMapping("/{bookingId}/cancel")
     public void cancelBooking(@PathVariable("bookingId") String bookingId) {
         bookingService.cancelBooking(bookingId);

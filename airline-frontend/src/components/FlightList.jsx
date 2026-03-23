@@ -4,6 +4,7 @@ import { flightService } from '../services/api';
 
 const FlightList = () => {
   const [flights, setFlights] = useState([]);
+  const [loading, setLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
   const query = new URLSearchParams(location.search);
@@ -13,39 +14,80 @@ const FlightList = () => {
     const destination = query.get('destination');
     const date = query.get('date');
 
-    if (origin && destination && date) {
-      flightService.search(origin, destination, date).then(res => setFlights(res.data));
-    } else {
-      flightService.getAll().then(res => setFlights(res.data));
-    }
+    setLoading(true);
+    const fetchFlights = async () => {
+      try {
+        const res = origin && destination && date 
+          ? await flightService.search(origin, destination, date)
+          : await flightService.getAll();
+        setFlights(res.data);
+      } catch (err) {
+        console.error("Failed to fetch flights", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFlights();
   }, [location.search]);
 
   return (
-    <div className="flight-list">
-      <h2 style={{ marginBottom: '1.5rem' }}>Available Flights</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-        {flights.length > 0 ? flights.map(f => (
-          <div key={f.id} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
-              <span>{f.flightNumber}</span>
-              <span style={{ color: 'var(--primary)' }}>${f.price}</span>
-            </div>
-            <p style={{ color: 'var(--secondary)' }}>{f.origin} → {f.destination}</p>
-            <p style={{ fontSize: '0.9rem' }}>Departure: {new Date(f.departureTime).toLocaleString()}</p>
-            <p style={{ fontSize: '0.8rem', color: f.availableSeats > 0 ? 'green' : 'red' }}>
-              Seats available: {f.availableSeats}
-            </p>
-            <button 
-              className="btn btn-primary" 
-              style={{ marginTop: '1rem' }} 
-              disabled={f.availableSeats === 0}
-              onClick={() => navigate(`/book/${f.id}`)}
-            >
-              Book Now
-            </button>
-          </div>
-        )) : <p>No flights found.</p>}
+    <div className="flight-results-container fade-in">
+      <div className="results-header">
+        <h2 className="section-title">Available Flights</h2>
+        <p className="results-count">{flights.length} flights found for your journey</p>
       </div>
+
+      {loading ? (
+        <div className="loading-state">Finding the best flights for you...</div>
+      ) : (
+        <div className="flight-grid">
+          {flights.length > 0 ? flights.map((f, i) => (
+            <div key={f.id} className="flight-card glass-card fade-in" style={{ animationDelay: `${i * 0.05}s` }}>
+              <div className="flight-card-header">
+                <div className="flight-info">
+                  <span className="flight-number">{f.flightNumber}</span>
+                  <div className="route-info">
+                    <span className="city">{f.origin}</span>
+                    <span className="route-arrow">→</span>
+                    <span className="city">{f.destination}</span>
+                  </div>
+                </div>
+                <div className="price-tag">
+                  <span className="currency">$</span>
+                  <span className="amount">{f.price}</span>
+                </div>
+              </div>
+              
+              <div className="flight-card-details">
+                <div className="detail-item">
+                  <span className="detail-label">Departure</span>
+                  <span className="detail-value">{new Date(f.departureTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Availability</span>
+                  <span className={`detail-status ${f.availableSeats > 5 ? 'status-ok' : 'status-low'}`}>
+                    {f.availableSeats > 0 ? `${f.availableSeats} seats left` : 'Sold Out'}
+                  </span>
+                </div>
+              </div>
+
+              <button 
+                className={`btn ${f.availableSeats > 0 ? 'btn-primary' : 'btn-secondary'} btn-full`}
+                disabled={f.availableSeats === 0}
+                onClick={() => navigate(`/book/${f.id}`)}
+              >
+                {f.availableSeats > 0 ? 'Reserve Seat' : 'Fully Booked'}
+              </button>
+            </div>
+          )) : (
+            <div className="no-flights glass-card">
+              <h3>No Flights Found</h3>
+              <p>Try searching for different dates or locations.</p>
+              <button onClick={() => navigate('/')} className="btn btn-accent">Back to Search</button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

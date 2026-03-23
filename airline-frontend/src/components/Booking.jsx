@@ -15,13 +15,22 @@ const Booking = () => {
   const [processing, setProcessing] = useState(false);
   const [occupiedSeats, setOccupiedSeats] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('ONLINE');
-  const { showToast } = useToast();
+  const formatCardNumber = (num) => {
+    return num.replace(/\s?/g, '').replace(/(\d{4})/g, '$1 ').trim();
+  };
+
+  const CLASS_ROWS = {
+    'FIRST':           { min: 1,  max: 2,  label: 'Rows 1–2' },
+    'BUSINESS':        { min: 3,  max: 6,  label: 'Rows 3–6' },
+    'PREMIUM_ECONOMY': { min: 7,  max: 12, label: 'Rows 7–12' },
+    'ECONOMY':         { min: 13, max: 35, label: 'Rows 13–35' },
+  };
 
   const classes = [
-    { id: 'ECONOMY', label: 'Economy', multiplier: 1, image: 'https://images.unsplash.com/photo-1542385151-efd9000785a0?q=80&w=400' },
+    { id: 'ECONOMY',         label: 'Economy',         multiplier: 1,   image: 'https://images.unsplash.com/photo-1542385151-efd9000785a0?q=80&w=400' },
     { id: 'PREMIUM_ECONOMY', label: 'Premium Economy', multiplier: 1.5, image: 'https://images.unsplash.com/photo-1517400508447-f8dd518b86db?q=80&w=400' },
-    { id: 'BUSINESS', label: 'Business Class', multiplier: 3, image: '/images/business_class.png' },
-    { id: 'FIRST', label: 'First Class', multiplier: 6, image: '/images/first_class.png' },
+    { id: 'BUSINESS',        label: 'Business Class',  multiplier: 3,   image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=400' },
+    { id: 'FIRST',           label: 'First Class',     multiplier: 6,   image: 'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?q=80&w=400' },
   ];
 
   useEffect(() => {
@@ -72,7 +81,6 @@ const Booking = () => {
     }
 
     if (occupiedSeats.includes(seat)) {
-      // Generate some suggestions in the correct class bounds
       const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
       const suggestions = [];
       for (let r of validRows) {
@@ -84,7 +92,7 @@ const Booking = () => {
         }
         if (suggestions.length >= 5) break;
       }
-      showToast(`Seat ${seat} is already occupied! Try these: ${suggestions.join(', ')}`, "error", 7000);
+      showToast(`Seat ${seat} is already occupied! Suggestions: ${suggestions.join(', ')}`, "error", 7000);
       return;
     }
     
@@ -93,26 +101,17 @@ const Booking = () => {
 
   const handlePayment = async (e) => {
     e.preventDefault();
-    
-    if (paymentMethod === 'ONLINE') {
-      if (paymentDetails.number.replace(/\s+/g, '').length !== 16) {
-        showToast("Please enter a valid 16-digit card number.", "error");
-        return;
-      }
+    if (paymentMethod === 'ONLINE' && paymentDetails.number.replace(/\s+/g, '').length !== 16) {
+      showToast("Please enter a valid 16-digit card number.", "error");
+      return;
     }
     
     setProcessing(true);
-    
     setTimeout(async () => {
       try {
         await bookingService.book(id, seatNumber.trim().toUpperCase(), selectedClass, paymentMethod);
-        if (paymentMethod === 'ONLINE') showToast('Payment successful & Booking confirmed!', 'success');
-        else showToast('Booking confirmed! Please pay at the airport counter.', 'success');
-        
-        // Give the user time to see the toast before navigating
-        setTimeout(() => {
-          navigate('/profile');
-        }, 3000);
+        showToast(paymentMethod === 'ONLINE' ? 'Payment Successful!' : 'Reservation Confirmed!', 'success');
+        setTimeout(() => navigate('/profile'), 3000);
       } catch (err) {
         showToast('Booking failed: ' + (err.response?.data?.message || 'Unknown error'), 'error');
         setProcessing(false);
@@ -120,161 +119,206 @@ const Booking = () => {
     }, 1500);
   };
 
-  if (loading) return <div className="container">Loading...</div>;
-  if (!flight) return <div className="container">Flight not found.</div>;
+  if (loading) return <div className="loading-state">Preparing your journey details...</div>;
+  if (!flight) return <div className="no-flights">Flight not found.</div>;
 
   const currentPrice = (flight.price * classes.find(c => c.id === selectedClass).multiplier).toFixed(2);
 
   return (
-    <div className="booking-page container">
-      <h2 style={{ textAlign: 'center', marginBottom: '3rem', fontSize: '2.5rem' }}>Customize Your Journey</h2>
+    <div className="booking-page fade-in">
+      <h1 className="section-title">Configure Your Journey</h1>
       
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem' }}>
-        <div className="flight-summary glass-card">
-          <h3>Flight Details</h3>
-          <div style={{ marginTop: '1.5rem' }}>
-            <p><strong>Flight:</strong> {flight.flightNumber}</p>
-            <p><strong>Route:</strong> {flight.origin} → {flight.destination}</p>
-            <p><strong>Departure:</strong> {new Date(flight.departureTime).toLocaleString()}</p>
-            <hr style={{ margin: '1.5rem 0', opacity: 0.2 }} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '1.2rem' }}>Total Price:</span>
-              <span style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--primary)' }}>${currentPrice}</span>
+      <div className="booking-grid">
+        <div className="flight-selection-area">
+          <div className="class-selection">
+            <h3 className="summary-title">Travel Class</h3>
+            <div className="class-grid">
+              {classes.map((c) => (
+                <div 
+                  key={c.id} 
+                  className={`booking-class-card glass-card ${selectedClass === c.id ? 'active' : ''}`}
+                  onClick={() => setSelectedClass(c.id)}
+                >
+                  <img src={c.image} alt={c.label} />
+                  {selectedClass === c.id && <span className="class-badge">Selected</span>}
+                  <div className="class-info">
+                    <h4>{c.label}</h4>
+                    <span className="multiplier">x{c.multiplier} Premium</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-          
-          {step === 1 ? (
-            <form onSubmit={handleStep1Submit} style={{ marginTop: '2rem' }}>
-              <div className="input-group">
-                <label>Pick Your Seat (e.g., 12A)</label>
-                <input 
-                  type="text" 
-                  placeholder="Enter seat number"
-                  value={seatNumber} 
-                  onChange={(e) => setSeatNumber(e.target.value)} 
-                  required 
-                />
-              </div>
-              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '1.25rem' }}>
-                Continue to Payment
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handlePayment} style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(0,0,0,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.2)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h4 style={{ margin: 0 }}>Checkout</h4>
-                <div style={{ fontSize: '1.5rem', color: 'var(--primary)' }}>💳</div>
-              </div>
-              
-              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-                <button 
-                  type="button" 
-                  onClick={() => setPaymentMethod('ONLINE')}
-                  style={{ flex: 1, padding: '0.75rem', border: paymentMethod === 'ONLINE' ? '2px solid var(--primary)' : '1px solid #ccc', background: paymentMethod === 'ONLINE' ? 'rgba(37,99,235,0.1)' : 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
-                >
-                  Pay Online Now
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => setPaymentMethod('AIRPORT')}
-                  style={{ flex: 1, padding: '0.75rem', border: paymentMethod === 'AIRPORT' ? '2px solid var(--primary)' : '1px solid #ccc', background: paymentMethod === 'AIRPORT' ? 'rgba(37,99,235,0.1)' : 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
-                >
-                  Pay at Airport
-                </button>
-              </div>
-
-              {paymentMethod === 'ONLINE' && (
-                <>
-                  <div className="input-group">
-                    <label>Card Number</label>
-                    <input 
-                      type="text" 
-                      placeholder="0000 0000 0000 0000"
-                      maxLength="19"
-                      value={paymentDetails.number} 
-                      onChange={(e) => setPaymentDetails({...paymentDetails, number: e.target.value})} 
-                      required 
-                      style={{ letterSpacing: '2px' }}
-                    />
-                  </div>
-                  <div className="input-group">
-                    <label>Name on Card</label>
-                    <input 
-                      type="text" 
-                      placeholder="Jane Doe"
-                      value={paymentDetails.name} 
-                      onChange={(e) => setPaymentDetails({...paymentDetails, name: e.target.value})} 
-                      required 
-                    />
-                  </div>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <div className="input-group" style={{ flex: 1 }}>
-                      <label>Expiry Date</label>
-                      <input 
-                        type="text" 
-                        placeholder="MM/YY"
-                        maxLength="5"
-                        value={paymentDetails.expiry} 
-                        onChange={(e) => setPaymentDetails({...paymentDetails, expiry: e.target.value})} 
-                        required 
-                      />
-                    </div>
-                    <div className="input-group" style={{ flex: 1 }}>
-                      <label>CVV</label>
-                      <input 
-                        type="password" 
-                        placeholder="123"
-                        maxLength="4"
-                        value={paymentDetails.cvv} 
-                        onChange={(e) => setPaymentDetails({...paymentDetails, cvv: e.target.value})} 
-                        required 
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-              
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setStep(1)} disabled={processing}>
-                  Back
-                </button>
-                <button type="submit" className="btn btn-primary" style={{ flex: 2, background: paymentMethod === 'ONLINE' ? '#10b981' : 'var(--primary)' }} disabled={processing}>
-                  {processing ? 'Processing...' : (paymentMethod === 'ONLINE' ? `Pay $${currentPrice}` : 'Reserve Seat')}
-                </button>
-              </div>
-              <p style={{ textAlign: 'center', fontSize: '0.75rem', opacity: 0.6, marginTop: '1rem', marginBottom: 0 }}>
-                {paymentMethod === 'ONLINE' ? 'Secure SSL Encrypted Checkout 🔒' : 'Pay at the check-in desk upon arrival.'}
-              </p>
-            </form>
-          )}
         </div>
 
-        <div className="class-selection">
-          <h3>Select Your Class</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginTop: '1.5rem' }}>
-            {classes.map((c) => (
-              <div 
-                key={c.id} 
-                className={`class-card glass-card ${selectedClass === c.id ? 'active-class' : ''}`}
-                onClick={() => setSelectedClass(c.id)}
-                style={{ 
-                  padding: '0', 
-                  overflow: 'hidden', 
-                  cursor: 'pointer',
-                  border: selectedClass === c.id ? '3px solid var(--primary)' : '1px solid rgba(255,255,255,0.3)',
-                  transition: 'transform 0.2s'
-                }}
-              >
-                <img src={c.image} alt={c.label} style={{ width: '100%', height: '120px', objectFit: 'cover' }} />
-                <div style={{ padding: '1rem', textAlign: 'center' }}>
-                  <p style={{ fontWeight: 'bold', margin: '0 0 0.25rem' }}>{c.label}</p>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--secondary)', marginBottom: '0.25rem' }}>x{c.multiplier} price</p>
-                  <p style={{ fontSize: '0.8rem', color: flight.availableSeatsByClass && flight.availableSeatsByClass[c.id] > 0 ? '#10b981' : '#ef4444', fontWeight: 'bold', margin: 0 }}>
-                    {flight.availableSeatsByClass ? flight.availableSeatsByClass[c.id] : 0} Seats Left
-                  </p>
-                </div>
+        <div className="booking-summary-column">
+          <div className="flight-summary-card glass-card">
+            <h3 className="summary-title">Booking Summary</h3>
+            <div className="summary-details">
+              <div className="detail-row">
+                <span>Flight</span>
+                <span className="bold">{flight.flightNumber}</span>
               </div>
-            ))}
+              <div className="detail-row">
+                <span>Route</span>
+                <span className="bold">{flight.origin} → {flight.destination}</span>
+              </div>
+              <div className="detail-row">
+                <span>Class</span>
+                <span className="bold">{classes.find(c => c.id === selectedClass).label}</span>
+              </div>
+              <div className="detail-row">
+                <span>Seat</span>
+                <span className="bold">{seatNumber || 'Not selected'}</span>
+              </div>
+              
+              <div className="price-display">
+                <span className="label">Total Amount</span>
+                <span className="value">${currentPrice}</span>
+              </div>
+            </div>
+
+            {step === 1 ? (
+              <form onSubmit={handleStep1Submit} className="checkout-section">
+                <div className="input-group">
+                  <label>Select Seat (e.g., 1A, 25F)</label>
+                  <input 
+                    type="text" 
+                    placeholder="Enter seat number..."
+                    value={seatNumber} 
+                    onChange={(e) => setSeatNumber(e.target.value)} 
+                    required 
+                    style={seatNumber ? (() => {
+                      const m = seatNumber.trim().toUpperCase().match(/^(\d+)[A-F]$/);
+                      if (!m) return {};
+                      const row = parseInt(m[1], 10);
+                      const { min, max } = CLASS_ROWS[selectedClass];
+                      return row >= min && row <= max
+                        ? { borderColor: '#10b981', boxShadow: '0 0 0 2px rgba(16,185,129,0.2)' }
+                        : { borderColor: '#f43f5e', boxShadow: '0 0 0 2px rgba(244,63,94,0.2)' };
+                    })() : {}}
+                  />
+                  {/* Live seat validation hint */}
+                  {(() => {
+                    const { min, max, label } = CLASS_ROWS[selectedClass];
+                    const m = seatNumber.trim().toUpperCase().match(/^(\d+)[A-F]$/);
+                    const row = m ? parseInt(m[1], 10) : null;
+                    const isWrong = row !== null && (row < min || row > max);
+                    const isRight = row !== null && row >= min && row <= max;
+                    return (
+                      <div style={{ marginTop: '0.4rem', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        {isWrong ? (
+                          <>
+                            <span style={{ color: '#f43f5e', fontWeight: 600 }}>⚠ Wrong class!</span>
+                            <span style={{ color: 'var(--text-muted)' }}>
+                              {classes.find(c => c.id === selectedClass)?.label} requires {label} (got row {row}).
+                            </span>
+                          </>
+                        ) : isRight ? (
+                          <span style={{ color: '#10b981', fontWeight: 600 }}>✓ Valid {classes.find(c => c.id === selectedClass)?.label} seat</span>
+                        ) : (
+                          <span style={{ color: 'var(--text-muted)' }}>ℹ {classes.find(c => c.id === selectedClass)?.label}: {label}</span>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+                <button type="submit" className="btn btn-primary btn-full">
+                  Proceed to Checkout
+                </button>
+              </form>
+            ) : (
+              <div className="checkout-section fade-in">
+                <h4 style={{ marginBottom: '1.5rem' }}>Secure Checkout</h4>
+                <div className="payment-toggle">
+                  <button 
+                    type="button" 
+                    className={`toggle-btn ${paymentMethod === 'ONLINE' ? 'active' : ''}`}
+                    onClick={() => setPaymentMethod('ONLINE')}
+                  >
+                    Credit Card
+                  </button>
+                  <button 
+                    type="button" 
+                    className={`toggle-btn ${paymentMethod === 'AIRPORT' ? 'active' : ''}`}
+                    onClick={() => setPaymentMethod('AIRPORT')}
+                  >
+                    Pay at Airport
+                  </button>
+                </div>
+
+                <form onSubmit={handlePayment}>
+                  {paymentMethod === 'ONLINE' && (
+                    <div className="fade-in">
+                      <div className="input-group">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <label>Cardholder Name</label>
+                          <button 
+                            type="button" 
+                            className="text-link" 
+                            style={{ fontSize: '0.75rem', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                            onClick={() => setPaymentDetails({ number: '4242424242424242', expiry: '12/28', cvv: '123', name: 'Test User' })}
+                          >
+                            Use Test Card
+                          </button>
+                        </div>
+                        <input 
+                          type="text" 
+                          placeholder="Full name on card" 
+                          value={paymentDetails.name}
+                          onChange={(e) => setPaymentDetails({ ...paymentDetails, name: e.target.value })}
+                          required 
+                        />
+                      </div>
+                      <div className="input-group">
+                        <label>Card Number</label>
+                        <input 
+                          type="text" 
+                          placeholder="4242 4242 4242 4242" 
+                          value={formatCardNumber(paymentDetails.number)}
+                          onChange={(e) => setPaymentDetails({ ...paymentDetails, number: e.target.value.replace(/\s+/g, '') })}
+                          maxLength="19" 
+                          required 
+                        />
+                      </div>
+                      <div style={{ display: 'flex', gap: '1rem' }}>
+                        <div className="input-group" style={{ flex: 2 }}>
+                          <label>Expiry</label>
+                          <input 
+                            type="text" 
+                            placeholder="MM / YY" 
+                            value={paymentDetails.expiry}
+                            onChange={(e) => setPaymentDetails({ ...paymentDetails, expiry: e.target.value })}
+                            maxLength="5" 
+                            required 
+                          />
+                        </div>
+                        <div className="input-group" style={{ flex: 1 }}>
+                          <label>CVV</label>
+                          <input 
+                            type="password" 
+                            placeholder="***" 
+                            value={paymentDetails.cvv}
+                            onChange={(e) => setPaymentDetails({ ...paymentDetails, cvv: e.target.value })}
+                            maxLength="3" 
+                            required 
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                    <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setStep(1)} disabled={processing}>
+                      Back
+                    </button>
+                    <button type="submit" className="btn btn-primary" style={{ flex: 2 }} disabled={processing}>
+                      {processing ? 'Processing...' : (paymentMethod === 'ONLINE' ? 'Complete Payment' : 'Confirm Booking')}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
           </div>
         </div>
       </div>

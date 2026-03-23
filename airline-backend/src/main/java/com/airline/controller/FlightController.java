@@ -24,6 +24,11 @@ public class FlightController {
         return flightService.searchFlights(origin, destination, date);
     }
 
+    @GetMapping("/{id}")
+    public Flight getFlightById(@PathVariable("id") String id) {
+        return flightService.getFlightById(id);
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public Flight addFlight(@RequestBody Flight flight) {
