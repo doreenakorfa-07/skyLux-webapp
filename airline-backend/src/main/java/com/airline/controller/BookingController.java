@@ -16,12 +16,12 @@ public class BookingController {
     BookingService bookingService;
 
     @PostMapping
-    public Booking bookTicket(@RequestBody Map<String, String> bookingRequest) {
-        String flightId = bookingRequest.get("flightId");
-        String seatNumber = bookingRequest.get("seatNumber");
-        String flightClass = bookingRequest.get("flightClass");
-        String paymentMethod = bookingRequest.getOrDefault("paymentMethod", "ONLINE");
-        return bookingService.bookTicket(flightId, seatNumber, flightClass, paymentMethod);
+    public List<Booking> bookTicket(@RequestBody Map<String, Object> bookingRequest) {
+        String flightId = (String) bookingRequest.get("flightId");
+        Integer numSeats = (Integer) bookingRequest.getOrDefault("numSeats", 1);
+        String flightClass = (String) bookingRequest.get("flightClass");
+        String paymentMethod = (String) bookingRequest.getOrDefault("paymentMethod", "ONLINE");
+        return bookingService.bookTickets(flightId, numSeats, flightClass, paymentMethod);
     }
 
     @GetMapping("/user")

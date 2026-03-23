@@ -31,58 +31,81 @@ public class BookingService {
     @Autowired
     PaymentRepository paymentRepository;
 
-    public Booking bookTicket(String flightId, String seatNumber, String flightClass, String paymentMethod) {
+    public List<Booking> bookTickets(String flightId, Integer numSeats, String flightClass, String paymentMethod) {
         Flight flight = flightRepository.findById(flightId)
                 .orElseThrow(() -> new RuntimeException("Flight not found"));
 
-        if (flight.getAvailableSeats() <= 0) {
-            throw new RuntimeException("No seats available on this flight");
+        if (flight.getAvailableSeats() < numSeats) {
+            throw new RuntimeException("Not enough seats available on this flight");
         }
         
         String clazz = flightClass.toUpperCase();
         Integer classSeats = flight.getAvailableSeatsByClass() != null ? flight.getAvailableSeatsByClass().get(clazz) : null;
-        if (classSeats != null && classSeats <= 0) {
-            throw new RuntimeException("No seats available in " + clazz + " class");
+        if (classSeats != null && classSeats < numSeats) {
+            throw new RuntimeException("Not enough seats available in " + clazz + " class");
         }
 
-        if (bookingRepository.existsByFlightAndSeatNumberAndStatusNot(flight, seatNumber, "CANCELLED")) {
-            throw new RuntimeException("Seat is already occupied");
-        }
+        List<String> assignedSeats = assignSeats(flight, flightClass, numSeats);
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Calculate class-based price
         Double basePrice = flight.getPrice();
-        Double totalPrice = calculatePrice(basePrice, flightClass);
-
-        Booking booking = new Booking(null, user, flight, LocalDateTime.now(), "CONFIRMED", seatNumber, flightClass, totalPrice);
+        Double totalPricePerSeat = calculatePrice(basePrice, flightClass);
         
-        // Update available seats
-        flight.setAvailableSeats(flight.getAvailableSeats() - 1);
-        if (flight.getAvailableSeatsByClass() != null && flight.getAvailableSeatsByClass().containsKey(clazz)) {
-            flight.getAvailableSeatsByClass().put(clazz, flight.getAvailableSeatsByClass().get(clazz) - 1);
+        java.util.List<Booking> savedBookings = new java.util.ArrayList<>();
+
+        for (String seat : assignedSeats) {
+            Booking booking = new Booking(null, user, flight, LocalDateTime.now(), "CONFIRMED", seat, flightClass, totalPricePerSeat);
+            
+            // Update available seats for each ticket
+            flight.setAvailableSeats(flight.getAvailableSeats() - 1);
+            if (flight.getAvailableSeatsByClass() != null && flight.getAvailableSeatsByClass().containsKey(clazz)) {
+                flight.getAvailableSeatsByClass().put(clazz, flight.getAvailableSeatsByClass().get(clazz) - 1);
+            }
+            
+            Booking savedBooking = bookingRepository.save(booking);
+            savedBookings.add(savedBooking);
+
+            // Create payment record for each booking
+            String txnId = "AIRPORT".equalsIgnoreCase(paymentMethod) ? "PENDING-AIRPORT" : "TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            String payStatus = "AIRPORT".equalsIgnoreCase(paymentMethod) ? "PENDING" : "SUCCESS";
+            Payment payment = new Payment(null, user, savedBooking, totalPricePerSeat, txnId, payStatus, LocalDateTime.now());
+            paymentRepository.save(payment);
         }
+
         flightRepository.save(flight);
+        return savedBookings;
+    }
 
-        Booking savedBooking = bookingRepository.save(booking);
+    private List<String> assignSeats(Flight flight, String flightClass, int count) {
+        List<String> occupied = getOccupiedSeats(flight.getId());
+        List<String> assigned = new java.util.ArrayList<>();
+        
+        int startRow, endRow;
+        switch (flightClass.toUpperCase()) {
+            case "FIRST" -> { startRow = 1; endRow = 2; }
+            case "BUSINESS" -> { startRow = 3; endRow = 6; }
+            case "PREMIUM_ECONOMY" -> { startRow = 7; endRow = 12; }
+            default -> { startRow = 13; endRow = 35; }
+        }
 
-        // Simulated Secure Payment Process or Airport Payment
-        String txnId;
-        String payStatus;
-        if ("AIRPORT".equalsIgnoreCase(paymentMethod)) {
-            txnId = "PENDING-AIRPORT";
-            payStatus = "PENDING";
-        } else {
-            txnId = "TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-            payStatus = "SUCCESS";
+        char[] cols = {'A', 'B', 'C', 'D', 'E', 'F'};
+        for (int r = startRow; r <= endRow; r++) {
+            for (char c : cols) {
+                String seat = r + String.valueOf(c);
+                if (!occupied.contains(seat) && !assigned.contains(seat)) {
+                    assigned.add(seat);
+                    if (assigned.size() == count) return assigned;
+                }
+            }
         }
         
-        Payment payment = new Payment(null, user, savedBooking, totalPrice, txnId, payStatus, LocalDateTime.now());
-        paymentRepository.save(payment);
-
-        return savedBooking;
+        if (assigned.size() < count) {
+            throw new RuntimeException("Could not find enough available seats in " + flightClass);
+        }
+        return assigned;
     }
 
     private Double calculatePrice(Double basePrice, String flightClass) {

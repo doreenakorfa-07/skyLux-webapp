@@ -6,15 +6,20 @@ import { useToast } from './Toast';
 const Booking = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [flight, setFlight] = useState(null);
+  const [numSeats, setNumSeats] = useState(1);
   const [selectedClass, setSelectedClass] = useState('ECONOMY');
-  const [seatNumber, setSeatNumber] = useState('');
+  const [selectedSeats, setSelectedSeats] = useState([]);
+  const [seatInput, setSeatInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState(1);
   const [paymentDetails, setPaymentDetails] = useState({ number: '', expiry: '', cvv: '', name: '' });
   const [processing, setProcessing] = useState(false);
   const [occupiedSeats, setOccupiedSeats] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('ONLINE');
+  const [summaryPrice, setSummaryPrice] = useState(0);
+
   const formatCardNumber = (num) => {
     return num.replace(/\s?/g, '').replace(/(\d{4})/g, '$1 ').trim();
   };
@@ -36,21 +41,35 @@ const Booking = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
         const [flightRes, seatsRes] = await Promise.all([
-          flightService.getAll(),
+          flightService.getById(id),
           bookingService.getOccupiedSeats(id)
         ]);
-        const f = flightRes.data.find(item => item.id.toString() === id);
-        setFlight(f);
-        setOccupiedSeats(seatsRes.data.map(s => s.toUpperCase()));
+        
+        if (flightRes.data) {
+          setFlight(flightRes.data);
+        }
+        
+        if (seatsRes.data) {
+          setOccupiedSeats(seatsRes.data.map(s => s.toUpperCase()));
+        }
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching booking data:", err);
+        showToast("Failed to load flight details. Please try again.", "error");
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+    if (id) fetchData();
   }, [id]);
+
+  useEffect(() => {
+    if (flight) {
+      const selectedClassInfo = classes.find(c => c.id === selectedClass) || classes[0];
+      setSummaryPrice((flight.price * selectedClassInfo.multiplier * numSeats).toFixed(2));
+    }
+  }, [flight, selectedClass, numSeats]);
 
   const handleStep1Submit = (e) => {
     e.preventDefault();
@@ -58,44 +77,6 @@ const Booking = () => {
       navigate('/login');
       return;
     }
-    
-    const seat = seatNumber.trim().toUpperCase();
-    const seatMatch = seat.match(/^(\d+)[A-F]$/);
-    if (!seatMatch) {
-      showToast("Invalid seat format. Use formats like 1A, 15F, etc.", "error");
-      return;
-    }
-
-    const rowNum = parseInt(seatMatch[1], 10);
-    const classRows = {
-      'FIRST': [1, 2],
-      'BUSINESS': [3, 4, 5, 6],
-      'PREMIUM_ECONOMY': [7, 8, 9, 10, 11, 12],
-      'ECONOMY': Array.from({length: 23}, (_, i) => i + 13) // 13 to 35
-    };
-
-    const validRows = classRows[selectedClass];
-    if (!validRows.includes(rowNum)) {
-      showToast(`${selectedClass.replace('_', ' ')} seats must be selected from rows ${validRows[0]} to ${validRows[validRows.length - 1]}.`, "error");
-      return;
-    }
-
-    if (occupiedSeats.includes(seat)) {
-      const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
-      const suggestions = [];
-      for (let r of validRows) {
-        for (let l of letters) {
-          if (!occupiedSeats.includes(`${r}${l}`)) {
-            suggestions.push(`${r}${l}`);
-            if (suggestions.length >= 5) break;
-          }
-        }
-        if (suggestions.length >= 5) break;
-      }
-      showToast(`Seat ${seat} is already occupied! Suggestions: ${suggestions.join(', ')}`, "error", 7000);
-      return;
-    }
-    
     setStep(2);
   };
 
@@ -109,11 +90,18 @@ const Booking = () => {
     setProcessing(true);
     setTimeout(async () => {
       try {
-        await bookingService.book(id, seatNumber.trim().toUpperCase(), selectedClass, paymentMethod);
+        await bookingService.book(id, numSeats, selectedClass, paymentMethod);
         showToast(paymentMethod === 'ONLINE' ? 'Payment Successful!' : 'Reservation Confirmed!', 'success');
         setTimeout(() => navigate('/profile'), 3000);
       } catch (err) {
-        showToast('Booking failed: ' + (err.response?.data?.message || 'Unknown error'), 'error');
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          showToast('Session expired. Please log in again.', 'error');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setTimeout(() => navigate('/login'), 2000);
+        } else {
+          showToast('Booking failed: ' + (err.response?.data?.message || 'Check your connection'), 'error');
+        }
         setProcessing(false);
       }
     }, 1500);
@@ -122,7 +110,8 @@ const Booking = () => {
   if (loading) return <div className="loading-state">Preparing your journey details...</div>;
   if (!flight) return <div className="no-flights">Flight not found.</div>;
 
-  const currentPrice = (flight.price * classes.find(c => c.id === selectedClass).multiplier).toFixed(2);
+  const selectedClassInfo = classes.find(c => c.id === selectedClass) || classes[0];
+  const currentPrice = (flight.price * selectedClassInfo.multiplier).toFixed(2);
 
   return (
     <div className="booking-page fade-in">
@@ -165,65 +154,48 @@ const Booking = () => {
               </div>
               <div className="detail-row">
                 <span>Class</span>
-                <span className="bold">{classes.find(c => c.id === selectedClass).label}</span>
+                <span className="bold">{selectedClassInfo.label}</span>
               </div>
               <div className="detail-row">
-                <span>Seat</span>
-                <span className="bold">{seatNumber || 'Not selected'}</span>
+                <span>Seat(s)</span>
+                <span className="bold">Auto-assigned</span>
               </div>
               
               <div className="price-display">
                 <span className="label">Total Amount</span>
-                <span className="value">${currentPrice}</span>
+                <span className="value">${summaryPrice}</span>
               </div>
             </div>
 
             {step === 1 ? (
               <form onSubmit={handleStep1Submit} className="checkout-section">
-                <div className="input-group">
-                  <label>Select Seat (e.g., 1A, 25F)</label>
-                  <input 
-                    type="text" 
-                    placeholder="Enter seat number..."
-                    value={seatNumber} 
-                    onChange={(e) => setSeatNumber(e.target.value)} 
-                    required 
-                    style={seatNumber ? (() => {
-                      const m = seatNumber.trim().toUpperCase().match(/^(\d+)[A-F]$/);
-                      if (!m) return {};
-                      const row = parseInt(m[1], 10);
-                      const { min, max } = CLASS_ROWS[selectedClass];
-                      return row >= min && row <= max
-                        ? { borderColor: '#10b981', boxShadow: '0 0 0 2px rgba(16,185,129,0.2)' }
-                        : { borderColor: '#f43f5e', boxShadow: '0 0 0 2px rgba(244,63,94,0.2)' };
-                    })() : {}}
-                  />
-                  {/* Live seat validation hint */}
-                  {(() => {
-                    const { min, max, label } = CLASS_ROWS[selectedClass];
-                    const m = seatNumber.trim().toUpperCase().match(/^(\d+)[A-F]$/);
-                    const row = m ? parseInt(m[1], 10) : null;
-                    const isWrong = row !== null && (row < min || row > max);
-                    const isRight = row !== null && row >= min && row <= max;
-                    return (
-                      <div style={{ marginTop: '0.4rem', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        {isWrong ? (
-                          <>
-                            <span style={{ color: '#f43f5e', fontWeight: 600 }}>⚠ Wrong class!</span>
-                            <span style={{ color: 'var(--text-muted)' }}>
-                              {classes.find(c => c.id === selectedClass)?.label} requires {label} (got row {row}).
-                            </span>
-                          </>
-                        ) : isRight ? (
-                          <span style={{ color: '#10b981', fontWeight: 600 }}>✓ Valid {classes.find(c => c.id === selectedClass)?.label} seat</span>
-                        ) : (
-                          <span style={{ color: 'var(--text-muted)' }}>ℹ {classes.find(c => c.id === selectedClass)?.label}: {label}</span>
-                        )}
-                      </div>
-                    );
-                  })()}
+                <div className="input-group" style={{ marginBottom: '1.5rem' }}>
+                   <label>Number of Passengers / Seats</label>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                     <button 
+                        type="button" 
+                        onClick={() => setNumSeats(Math.max(1, numSeats - 1))}
+                        className="btn btn-secondary" 
+                        style={{ width: '40px', height: '40px', padding: 0 }}
+                     >-</button>
+                     <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{numSeats}</span>
+                     <button 
+                        type="button" 
+                        onClick={() => setNumSeats(Math.min(10, numSeats + 1))}
+                        className="btn btn-secondary" 
+                        style={{ width: '40px', height: '40px', padding: 0 }}
+                     >+</button>
+                   </div>
                 </div>
-                <button type="submit" className="btn btn-primary btn-full">
+
+                <div className="input-group">
+                  <div className="glass-card" style={{ padding: '1rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#10b981' }}>
+                      ✨ <strong>Smart Seat Allocation Active:</strong> The system will automatically select the best available seats for you in the {selectedClassInfo.label} section.
+                    </p>
+                  </div>
+                </div>
+                <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: '1rem' }}>
                   Proceed to Checkout
                 </button>
               </form>

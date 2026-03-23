@@ -81,8 +81,8 @@ export const flightService = {
 };
 
 export const bookingService = {
-  book: (flightId, seatNumber, flightClass, paymentMethod) => 
-    api.post('/bookings', { flightId, seatNumber, flightClass, paymentMethod }),
+  book: (flightId, numSeats, flightClass, paymentMethod) => 
+    api.post('/bookings', { flightId, numSeats, flightClass, paymentMethod }),
   getUserBookings: () => api.get('/bookings/user'),
   getOccupiedSeats: (flightId) => api.get(`/bookings/flight/${flightId}/seats`),
   cancelBooking: (bookingId) => api.put(`/bookings/${bookingId}/cancel`)
