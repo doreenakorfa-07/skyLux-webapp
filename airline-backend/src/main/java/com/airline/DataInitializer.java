@@ -42,31 +42,30 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.save(new User(null, "traveler@skylux.com", passwordEncoder.encode("traveler123"), "ROLE_USER", "Frequent", "Traveler", "traveler_pro", "traveler_pro"));
         }
 
-        // Seed flights if empty or very low
-        if (flightRepository.count() < 25) {
-            System.out.println("SkyLux: Flights missing or low. Seeding diverse flight set...");
-            flightRepository.deleteAll(); // Clean reset for fresh seed
-            flightRepository.save(createFlight("SL101", "London",   "New York",      1, 8,  550.0,  200));
-            flightRepository.save(createFlight("SL102", "Paris",    "Tokyo",         2, 12, 850.0,  250));
-            flightRepository.save(createFlight("SL103", "Berlin",   "Sydney",        3, 22, 1250.0, 300));
-            flightRepository.save(createFlight("SL201", "New York", "London",         5, 7,  480.0,  220));
-            flightRepository.save(createFlight("SL442", "Tokyo",    "San Francisco", 4, 9,  920.0,  250));
-            flightRepository.save(createFlight("SL500", "Dubai",    "Mumbai",        1, 3,  320.0,  300));
-            flightRepository.save(createFlight("SL001", "Sydney",   "Singapore",     2, 8,  600.0,  200));
-            flightRepository.save(createFlight("SL088", "Singapore", "Tokyo",        3, 7,  700.0,  180));
-            flightRepository.save(createFlight("SL999", "Rome",      "New York",     4, 9,  750.0,  250));
-            flightRepository.save(createFlight("SL777", "Los Angeles","Tokyo",       2, 11, 950.0,  300));
-            flightRepository.save(createFlight("SL111", "London",     "Paris",       1, 1,  150.0,  120));
-            flightRepository.save(createFlight("SL222", "Frankfurt",  "Milan",       2, 1,  180.0,  120));
-            flightRepository.save(createFlight("SL333", "Amsterdam",  "Madrid",      3, 2,  220.0,  150));
-            flightRepository.save(createFlight("SL444", "Barcelona",  "Lisbon",      4, 1,  120.0,  100));
-            flightRepository.save(createFlight("SL555", "Cape Town",  "Dubai",       5, 9,  880.0,  200));
-            flightRepository.save(createFlight("SL666", "Cairo",      "Istanbul",    1, 2,  250.0,  150));
-            flightRepository.save(createFlight("SL888", "Delhi",      "Bangkok",     2, 4,  350.0,  200));
-            flightRepository.save(createFlight("SL123", "Seoul",      "Singapore",   3, 6,  450.0,  200));
-            flightRepository.save(createFlight("SL456", "Hong Kong",  "Sydney",      4, 9,  700.0,  250));
-            flightRepository.save(createFlight("SL789", "Toronto",    "Vancover",    5, 5,  300.0,  180));
-        }
+        // Seed flights if missing
+        seedFlightIfMissing("SL101", "London",   "Accra",         1, 8,  550.0,  200);
+        seedFlightIfMissing("SL102", "Casablanca","Lagos",         2, 12, 850.0,  250);
+        seedFlightIfMissing("SL103", "Cairo",     "Nairobi",      3, 22, 1250.0, 300);
+        seedFlightIfMissing("SL201", "New York", "Cape Town",     5, 17, 980.0,  220);
+        seedFlightIfMissing("SL442", "Tokyo",    "Nairobi",       4, 15, 920.0,  250);
+        seedFlightIfMissing("SL500", "Dubai",    "Accra",         1, 10, 820.0,  300);
+        seedFlightIfMissing("SL001", "Cape Town", "Singapore",     2, 12, 700.0,  200);
+        seedFlightIfMissing("SL088", "Casablanca", "Paris",        3, 4,  300.0,  180);
+        seedFlightIfMissing("SL999", "Rome",      "Cairo",        4, 3,  450.0,  250);
+        seedFlightIfMissing("SL777", "Lagos",     "Dubai",        2, 7,  650.0,  300);
+        seedFlightIfMissing("SL111", "London",     "Lagos",       1, 6,  750.0,  120);
+        seedFlightIfMissing("SL222", "Accra",      "Johannesburg", 2, 6,  580.0,  120);
+        seedFlightIfMissing("SL333", "Nairobi",    "Addis Ababa",  3, 2,  220.0,  150);
+        seedFlightIfMissing("SL444", "Dakar",      "Abidjan",     4, 1,  180.0,  100);
+        seedFlightIfMissing("SL555", "Cape Town",  "Mauritius",    5, 4,  480.0,  200);
+        seedFlightIfMissing("SL666", "Cairo",      "Istanbul",    1, 2,  250.0,  150);
+        seedFlightIfMissing("SL888", "Delhi",      "Bangkok",     2, 4,  350.0,  200);
+        seedFlightIfMissing("SL123", "Seoul",      "Singapore",   3, 6,  450.0,  200);
+        seedFlightIfMissing("SL456", "Hong Kong",  "Sydney",      4, 9,  700.0,  250);
+        seedFlightIfMissing("SL789", "Toronto",    "Vancover",    5, 5,  300.0,  180);
+        seedFlightIfMissing("SL112", "London",     "Accra",       2, 6,  750.0,  250);
+        seedFlightIfMissing("SL223", "Paris",      "Lagos",       3, 6,  720.0,  250);
+        seedFlightIfMissing("SL334", "Dubai",      "Nairobi",     4, 5,  450.0,  200);
 
         // Seed some sample bookings if empty
         if (bookingRepository.count() == 0) {
@@ -74,12 +73,18 @@ public class DataInitializer implements CommandLineRunner {
             User member = userRepository.findByEmail("member@skylux.com").orElse(null);
             Flight flight = flightRepository.findAll().stream().findFirst().orElse(null);
             if (member != null && flight != null) {
-                bookingRepository.save(new Booking(null, member, flight, LocalDateTime.now().minusDays(1), "CONFIRMED", "12A", "BUSINESS", 850.0));
-                bookingRepository.save(new Booking(null, member, flight, LocalDateTime.now().minusDays(2), "CONFIRMED", "14C", "ECONOMY", 450.0));
+                bookingRepository.save(new Booking(null, member, flight, LocalDateTime.now().minusDays(1), "CONFIRMED", "12A", "BUSINESS", 850.0, "USD"));
+                bookingRepository.save(new Booking(null, member, flight, LocalDateTime.now().minusDays(2), "CONFIRMED", "14C", "ECONOMY", 450.0, "USD"));
             }
         }
         
         System.out.println("SkyLux: Data Initialization Complete.");
+    }
+
+    private void seedFlightIfMissing(String number, String origin, String dest, int daysOut, int hoursDuration, double price, int totalSeats) {
+        if (!flightRepository.existsByFlightNumber(number)) {
+            flightRepository.save(createFlight(number, origin, dest, daysOut, hoursDuration, price, totalSeats));
+        }
     }
 
     private Flight createFlight(String number, String origin, String dest, int daysOut, int hoursDuration, double price, int totalSeats) {

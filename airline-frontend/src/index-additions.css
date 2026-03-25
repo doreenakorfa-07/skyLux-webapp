@@ -1,0 +1,134 @@
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+}
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: .4s;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+}
+input:checked + .slider {
+  background-color: var(--accent);
+}
+input:checked + .slider:before {
+  transform: translateX(22px);
+}
+.slider.round {
+  border-radius: 34px;
+}
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/* Dark Mode Overrides */
+body.dark-mode {
+  --primary: #e2e8f0;
+  --primary-light: #f8fafc;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --background: #0f172a;
+  --glass: rgba(15, 23, 42, 0.8);
+  --glass-dark: rgba(255, 255, 255, 0.1);
+  background-image: url('https://images.unsplash.com/photo-1475274047050-1d0c0975c63e?auto=format&fit=crop&q=80&w=2070');
+}
+
+body.dark-mode::before {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.7) 0%, rgba(15, 23, 42, 0.5) 100%);
+}
+
+body.dark-mode input,
+body.dark-mode select {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: white !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark-mode .nav-link,
+body.dark-mode .logo-text,
+body.dark-mode .hero-title,
+body.dark-mode .section-title,
+body.dark-mode .auth-title,
+body.dark-mode .summary-title {
+  color: white;
+}
+
+body.dark-mode .btn-primary {
+  background-color: var(--primary);
+  color: #0f172a;
+}
+
+body.dark-mode .btn-primary:hover {
+  background-color: var(--primary-light);
+  color: #0f172a;
+}
+
+body.dark-mode .btn-accent {
+  background-color: var(--accent);
+  color: #0f172a;
+}
+
+body.dark-mode .btn-secondary {
+  background-color: transparent;
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+body.dark-mode .cta-card,
+body.dark-mode .cta-title,
+body.dark-mode .cta-text {
+  color: #0f172a !important;
+}
+
+.payment-refunded {
+  background: rgba(167, 139, 250, 0.1);
+  color: #a78bfa;
+}
+
+.history-page {
+  padding: 2rem 0;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.history-grid .history-item {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.history-grid .history-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-mode .history-grid .status-confirmed {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+body.dark-mode .history-grid .status-cancelled {
+  background: rgba(244, 63, 94, 0.2);
+  color: #f43f5e;
+}

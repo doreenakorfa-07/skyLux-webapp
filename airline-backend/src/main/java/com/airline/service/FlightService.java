@@ -17,9 +17,15 @@ public class FlightService {
     }
 
     public List<Flight> searchFlights(String origin, String destination, String date) {
+        String trimmedOrigin = origin != null ? origin.trim() : "";
+        String trimmedDestination = destination != null ? destination.trim() : "";
+        
+        if (date == null || date.isEmpty()) {
+            return flightRepository.findByOriginIgnoreCaseAndDestinationIgnoreCase(trimmedOrigin, trimmedDestination);
+        }
         // Date parsing logic
         LocalDateTime dateTime = LocalDateTime.parse(date + "T00:00:00");
-        return flightRepository.findByOriginAndDestinationAndDepartureTimeAfter(origin, destination, dateTime);
+        return flightRepository.findByOriginIgnoreCaseAndDestinationIgnoreCaseAndDepartureTimeAfter(trimmedOrigin, trimmedDestination, dateTime);
     }
 
     public Flight addFlight(Flight flight) {

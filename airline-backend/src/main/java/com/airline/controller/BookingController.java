@@ -10,7 +10,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/bookings")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class BookingController {
     @Autowired
     BookingService bookingService;
@@ -21,7 +20,8 @@ public class BookingController {
         Integer numSeats = (Integer) bookingRequest.getOrDefault("numSeats", 1);
         String flightClass = (String) bookingRequest.get("flightClass");
         String paymentMethod = (String) bookingRequest.getOrDefault("paymentMethod", "ONLINE");
-        return bookingService.bookTickets(flightId, numSeats, flightClass, paymentMethod);
+        String currency = (String) bookingRequest.getOrDefault("currency", "USD");
+        return bookingService.bookTickets(flightId, numSeats, flightClass, paymentMethod, currency);
     }
 
     @GetMapping("/user")
@@ -39,8 +39,43 @@ public class BookingController {
         return bookingService.getAllBookings();
     }
 
+    @GetMapping("/history")
+    public List<Booking> getHistoryBookings() {
+        return bookingService.getHistoryBookings();
+    }
+
     @PutMapping("/{bookingId}/cancel")
     public void cancelBooking(@PathVariable("bookingId") String bookingId) {
         bookingService.cancelBooking(bookingId);
+    }
+
+    @DeleteMapping("/{bookingId}")
+    public void deleteBooking(@PathVariable("bookingId") String bookingId) {
+        bookingService.deleteBooking(bookingId);
+    }
+
+    @DeleteMapping("/cleanup")
+    public void cleanupBookings() {
+        bookingService.cleanupUserBookings();
+    }
+
+    @PutMapping("/{bookingId}/archive")
+    public void archiveBooking(@PathVariable("bookingId") String bookingId) {
+        bookingService.archiveBooking(bookingId);
+    }
+
+    @PutMapping("/cleanup/archive")
+    public void archiveCleanupBookings() {
+        bookingService.archiveUserBookings();
+    }
+
+    @PutMapping("/{bookingId}/archive-admin")
+    public void archiveByAdmin(@PathVariable("bookingId") String bookingId) {
+        bookingService.archiveByAdmin(bookingId);
+    }
+
+    @DeleteMapping("/{bookingId}/permanent")
+    public void hardDeleteBooking(@PathVariable("bookingId") String bookingId) {
+        bookingService.hardDeleteBooking(bookingId);
     }
 }

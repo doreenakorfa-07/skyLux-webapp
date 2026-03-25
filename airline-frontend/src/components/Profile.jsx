@@ -3,6 +3,7 @@ import { bookingService, userService, paymentService, authService } from '../ser
 import { useToast } from './Toast';
 import Modal from './Modal';
 import SettingsModal from './SettingsModal';
+import { getCurrencySymbol } from '../utils/currencyUtils';
 
 const Profile = () => {
   const [bookings, setBookings] = useState([]);
@@ -96,10 +97,11 @@ const Profile = () => {
 
   const confirmCancel = async () => {
     if (!bookingToCancel) return;
+    const booking = bookings.find(b => b.id === bookingToCancel);
     try {
       await bookingService.cancelBooking(bookingToCancel);
-      showToast("Booking cancelled successfully.", "success");
-      setBookings(bookings.map(b => b.id === bookingToCancel ? { ...b, status: 'CANCELLED' } : b));
+      showToast(`Cancellation successful! A refund of ${getCurrencySymbol(booking.currency)}${booking.totalPrice.toFixed(2)} has been automatically initiated.`, "success");
+      setBookings(bookings.map(b => b.id === bookingToCancel ? { ...b, status: 'CANCELLED', paymentStatus: 'REFUNDED' } : b));
     } catch (err) {
       showToast("Failed to cancel booking.", "error");
     } finally {
@@ -108,11 +110,32 @@ const Profile = () => {
     }
   };
 
+  const handleCleanup = async () => {
+    try {
+      await bookingService.archiveCleanupBookings();
+      showToast("History tidied successfully.", "success");
+      setBookings(bookings.filter(b => b.status !== 'CANCELLED' && b.flight));
+    } catch (err) {
+      showToast("Failed to cleanup history.", "error");
+    }
+  };
+
+  const handleDelete = async (bookingId) => {
+    try {
+      await bookingService.archiveBooking(bookingId);
+      showToast("Record removed.", "success");
+      setBookings(bookings.filter(b => b.id !== bookingId));
+    } catch (err) {
+      showToast("Failed to remove record.", "error");
+    }
+  };
+
   if (loading) return <div className="loading-state">Personalizing your experience...</div>;
 
   const displayName = userData?.username || userData?.email || localStorage.getItem('email') || 'Valued Guest';
   const displayEmail = userData?.email || localStorage.getItem('email');
   const hasUsername = !!userData?.username;
+  const hasRemovable = bookings.some(b => b.status === 'CANCELLED' || !b.flight);
 
   return (
     <div className="profile-container fade-in">
@@ -171,7 +194,14 @@ const Profile = () => {
 
         {/* Bookings Area */}
         <main className="history-area">
-          <h3 className="summary-title">Recent Journeys</h3>
+          <div className="history-header">
+            <h3 className="summary-title">Recent Journeys</h3>
+            {hasRemovable && (
+              <button className="tidy-btn" onClick={handleCleanup}>
+                <span className="tidy-icon">🧹</span> Tidy History
+              </button>
+            )}
+          </div>
           
           {bookings.length === 0 ? (
             <div className="no-flights glass-card">
@@ -203,16 +233,25 @@ const Profile = () => {
                     <div className={`status-badge ${booking.status === 'CONFIRMED' ? 'status-confirmed' : 'status-cancelled'}`}>
                       {booking.status}
                     </div>
-                    <div className={`status-badge ${booking.paymentStatus === 'SUCCESS' ? 'payment-success' : booking.paymentStatus === 'FAILED' ? 'payment-failed' : 'payment-pending'}`}>
-                      {booking.paymentStatus === 'SUCCESS' ? '✓ Paid' : booking.paymentStatus === 'FAILED' ? '✕ Payment Failed' : '⏳ Pending'}
+                    <div className={`status-badge ${booking.paymentStatus === 'SUCCESS' ? 'payment-success' : booking.paymentStatus === 'FAILED' ? 'payment-failed' : booking.paymentStatus === 'REFUNDED' ? 'payment-refunded' : 'payment-pending'}`}>
+                      {booking.paymentStatus === 'SUCCESS' ? '✓ Paid' : booking.paymentStatus === 'FAILED' ? '✕ Payment Failed' : booking.paymentStatus === 'REFUNDED' ? '💸 Refunded' : '⏳ Pending'}
                     </div>
-                    <span className="history-price">${booking.totalPrice.toFixed(2)}</span>
+                    <span className="history-price">{getCurrencySymbol(booking.currency)}{booking.totalPrice.toFixed(2)}</span>
                     {booking.status === 'CONFIRMED' && (
                       <button 
                         onClick={() => openCancelModal(booking.id)}
                         className="cancel-btn-text"
                       >
                         Cancel Reservation
+                      </button>
+                    )}
+                    {(booking.status === 'CANCELLED' || !booking.flight) && (
+                      <button 
+                        onClick={() => handleDelete(booking.id)}
+                        className="delete-record-btn"
+                        title="Remove from history"
+                      >
+                        ✕
                       </button>
                     )}
                   </div>

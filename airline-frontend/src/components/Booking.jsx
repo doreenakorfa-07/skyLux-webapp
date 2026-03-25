@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { flightService, bookingService } from '../services/api';
 import { useToast } from './Toast';
+import { formatPrice } from '../utils/currencyUtils';
 
 const Booking = () => {
   const { id } = useParams();
@@ -19,6 +20,13 @@ const Booking = () => {
   const [occupiedSeats, setOccupiedSeats] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('ONLINE');
   const [summaryPrice, setSummaryPrice] = useState(0);
+  const [currency, setCurrency] = useState(localStorage.getItem('currency') || 'USD');
+
+  useEffect(() => {
+    const syncCurrency = () => setCurrency(localStorage.getItem('currency') || 'USD');
+    window.addEventListener('currencyChange', syncCurrency);
+    return () => window.removeEventListener('currencyChange', syncCurrency);
+  }, []);
 
   const formatCardNumber = (num) => {
     return num.replace(/\s?/g, '').replace(/(\d{4})/g, '$1 ').trim();
@@ -90,7 +98,7 @@ const Booking = () => {
     setProcessing(true);
     setTimeout(async () => {
       try {
-        await bookingService.book(id, numSeats, selectedClass, paymentMethod);
+        await bookingService.book(id, numSeats, selectedClass, paymentMethod, currency);
         showToast(paymentMethod === 'ONLINE' ? 'Payment Successful!' : 'Reservation Confirmed!', 'success');
         setTimeout(() => navigate('/profile'), 3000);
       } catch (err) {
@@ -163,7 +171,7 @@ const Booking = () => {
               
               <div className="price-display">
                 <span className="label">Total Amount</span>
-                <span className="value">${summaryPrice}</span>
+                <span className="value">{formatPrice(summaryPrice, currency)}</span>
               </div>
             </div>
 

@@ -9,7 +9,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/flights")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class FlightController {
     @Autowired
     FlightService flightService;
@@ -20,7 +19,7 @@ public class FlightController {
     }
 
     @GetMapping("/search")
-    public List<Flight> searchFlights(@RequestParam("origin") String origin, @RequestParam("destination") String destination, @RequestParam("date") String date) {
+    public List<Flight> searchFlights(@RequestParam("origin") String origin, @RequestParam("destination") String destination, @RequestParam(value = "date", required = false) String date) {
         return flightService.searchFlights(origin, destination, date);
     }
 

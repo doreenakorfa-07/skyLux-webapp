@@ -26,7 +26,7 @@ body {
   background-color: var(--background);
   color: var(--text);
   min-height: 100vh;
-  background-image: url('https://images.unsplash.com/photo-1436491865332-7a61a109c0f2?q=80&w=2070');
+  background-image: url('https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&q=80&w=2070');
   background-attachment: fixed;
   background-size: cover;
   background-position: center;
@@ -36,7 +36,7 @@ body::before {
   content: '';
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(135deg, rgba(248, 250, 252, 0.9) 0%, rgba(248, 250, 252, 0.7) 100%);
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.7) 0%, rgba(248, 250, 252, 0.45) 100%);
   z-index: -1;
 }
 
@@ -1391,4 +1391,45 @@ body::before {
   font-size: 0.75rem;
   font-weight: 600;
   flex-shrink: 0;
+}
+
+.tidy-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+}
+
+.tidy-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.delete-record-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 4px 8px;
+  transition: color 0.3s ease;
+  margin-left: 10px;
+}
+
+.delete-record-btn:hover {
+  color: #ff4d4d;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
 }

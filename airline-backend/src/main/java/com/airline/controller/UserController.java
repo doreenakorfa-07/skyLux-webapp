@@ -16,7 +16,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class UserController {
 
     @Autowired
@@ -65,22 +64,28 @@ public class UserController {
     }
 
     @PatchMapping("/me")
-    public User updateCurrentUser(@RequestBody Map<String, String> updates) {
+    public User updateCurrentUser(@RequestBody Map<String, Object> updates) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (updates.containsKey("username") && !updates.get("username").isBlank()) {
-            user.setUsername(updates.get("username"));
+        if (updates.containsKey("username") && updates.get("username") != null && !updates.get("username").toString().isBlank()) {
+            user.setUsername(updates.get("username").toString());
         }
-        if (updates.containsKey("firstName") && !updates.get("firstName").isBlank()) {
-            user.setFirstName(updates.get("firstName"));
+        if (updates.containsKey("firstName") && updates.get("firstName") != null && !updates.get("firstName").toString().isBlank()) {
+            user.setFirstName(updates.get("firstName").toString());
         }
-        if (updates.containsKey("lastName") && !updates.get("lastName").isBlank()) {
-            user.setLastName(updates.get("lastName"));
+        if (updates.containsKey("lastName") && updates.get("lastName") != null && !updates.get("lastName").toString().isBlank()) {
+            user.setLastName(updates.get("lastName").toString());
         }
-        if (updates.containsKey("otherNames")) {
-            user.setOtherNames(updates.get("otherNames"));
+        if (updates.containsKey("otherNames") && updates.get("otherNames") != null) {
+            user.setOtherNames(updates.get("otherNames").toString());
+        }
+        if (updates.containsKey("bookingNotifications")) {
+            user.setBookingNotifications(Boolean.parseBoolean(String.valueOf(updates.get("bookingNotifications"))));
+        }
+        if (updates.containsKey("flightStatusNotifications")) {
+            user.setFlightStatusNotifications(Boolean.parseBoolean(String.valueOf(updates.get("flightStatusNotifications"))));
         }
 
         return userRepository.save(user);

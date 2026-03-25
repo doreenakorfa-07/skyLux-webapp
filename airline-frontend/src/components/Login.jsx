@@ -13,7 +13,7 @@ const Login = () => {
     setError('');
     try {
       await authService.login(email, password);
-      navigate('/flights');
+      navigate('/welcome');
     } catch (err) {
       const errMsg = err.response?.data?.message || '';
       if (errMsg.includes('restricted')) {

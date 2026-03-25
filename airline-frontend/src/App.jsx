@@ -8,8 +8,11 @@ import FlightList from './components/FlightList';
 import Booking from './components/Booking';
 import Profile from './components/Profile';
 import AdminDashboard from './components/AdminDashboard';
+import History from './components/History';
+import Welcome from './components/Welcome';
 import { ToastProvider } from './components/Toast';
 import './App.css';
+import './index-additions.css';
 
 function App() {
   return (
@@ -22,10 +25,12 @@ function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/welcome" element={<Welcome />} />
               <Route path="/flights" element={<FlightList />} />
               <Route path="/book/:id" element={<Booking />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/history" element={<History />} />
             </Routes>
           </main>
         </div>

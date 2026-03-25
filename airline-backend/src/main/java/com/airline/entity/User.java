@@ -27,6 +27,9 @@ public class User {
 
     private boolean blocked = false; // admin can block/unblock
 
+    private boolean bookingNotifications = true;
+    private boolean flightStatusNotifications = true;
+
     public User() {}
 
     public User(String id, String email, String password, String role) {
@@ -77,4 +80,9 @@ public class User {
 
     public boolean isBlocked() { return blocked; }
     public void setBlocked(boolean blocked) { this.blocked = blocked; }
+
+    public boolean isBookingNotifications() { return bookingNotifications; }
+    public void setBookingNotifications(boolean bookingNotifications) { this.bookingNotifications = bookingNotifications; }
+    public boolean isFlightStatusNotifications() { return flightStatusNotifications; }
+    public void setFlightStatusNotifications(boolean flightStatusNotifications) { this.flightStatusNotifications = flightStatusNotifications; }
 }

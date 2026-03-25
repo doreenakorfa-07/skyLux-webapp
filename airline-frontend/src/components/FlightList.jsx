@@ -13,14 +13,26 @@ const FlightList = () => {
     const origin = query.get('origin');
     const destination = query.get('destination');
     const date = query.get('date');
+    const city = query.get('city');
 
     setLoading(true);
     const fetchFlights = async () => {
       try {
-        const res = origin && destination && date 
-          ? await flightService.search(origin, destination, date)
-          : await flightService.getAll();
-        setFlights(res.data);
+        let res;
+        if (origin && destination) {
+          res = await flightService.search(origin, destination, date || '');
+        } else {
+          res = await flightService.getAll();
+        }
+        
+        let filteredFlights = res.data;
+        if (city) {
+          const lowerCity = city.toLowerCase();
+          filteredFlights = filteredFlights.filter(f => 
+            f.origin.toLowerCase() === lowerCity || f.destination.toLowerCase() === lowerCity
+          );
+        }
+        setFlights(filteredFlights);
       } catch (err) {
         console.error("Failed to fetch flights", err);
       } finally {

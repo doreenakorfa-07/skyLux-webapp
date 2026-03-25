@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { flightService, adminService } from '../services/api';
+import { flightService, adminService, bookingService } from '../services/api';
+import { exchangeRates, getCurrencySymbol } from '../utils/currencyUtils';
 import Modal from './Modal';
 import { useToast } from './Toast';
 
@@ -21,6 +22,8 @@ const AdminDashboard = () => {
   const { showToast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [flightToDelete, setFlightToDelete] = useState(null);
+  const [bookingToDelete, setBookingToDelete] = useState(null);
+  const [isCleanupModalOpen, setIsCleanupModalOpen] = useState(false);
 
   useEffect(() => {
     fetchFlights();
@@ -99,6 +102,49 @@ const AdminDashboard = () => {
     }
   };
 
+  const openDeleteBookingModal = (booking) => {
+    setBookingToDelete(booking);
+  };
+
+  const confirmDeleteBooking = async () => {
+    if (!bookingToDelete) return;
+    try {
+      if (bookingToDelete.status === 'CONFIRMED') {
+        await bookingService.cancelBooking(bookingToDelete.id);
+        showToast('Booking cancelled and refunded successfully.', 'success');
+      } else {
+        await bookingService.archiveByAdmin(bookingToDelete.id);
+        showToast('Booking archived from dashboard.', 'info');
+      }
+      fetchAnalytics();
+    } catch (err) {
+      console.error(err);
+      showToast(bookingToDelete.status === 'CONFIRMED' ? 'Failed to cancel booking.' : 'Failed to archive booking.', 'error');
+    } finally {
+      setBookingToDelete(null);
+    }
+  };
+
+  const openCleanupModal = () => {
+    setIsCleanupModalOpen(true);
+  };
+
+  const confirmCleanup = async () => {
+    try {
+      const toDelete = allBookings.filter(b => b.status === 'CANCELLED' || !b.flight);
+      for (const b of toDelete) {
+        await bookingService.deleteBooking(b.id);
+      }
+      fetchAnalytics();
+      showToast(`Cleaned up ${toDelete.length} bookings.`, 'success');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to clean up bookings.', 'error');
+    } finally {
+      setIsCleanupModalOpen(false);
+    }
+  };
+
   const tabs = [
     { id: 'flights', label: '✈ Flights', },
     { id: 'users', label: '👥 Users', badge: users.length },
@@ -106,26 +152,81 @@ const AdminDashboard = () => {
   ];
 
   const confirmedBookings = allBookings.filter(b => b.status === 'CONFIRMED').length;
-  const revenue = allBookings.filter(b => b.status === 'CONFIRMED').reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+  
+  // Group revenue and refunds by currency
+  const revenueByCurrency = allBookings
+    .filter(b => b.status === 'CONFIRMED')
+    .reduce((acc, b) => {
+      const cur = b.currency || 'USD';
+      acc[cur] = (acc[cur] || 0) + (b.totalPrice || 0);
+      return acc;
+    }, {});
+
+  const refundsByCurrency = allBookings
+    .filter(b => b.status === 'CANCELLED')
+    .reduce((acc, b) => {
+      const cur = b.currency || 'USD';
+      acc[cur] = (acc[cur] || 0) + (b.totalPrice || 0);
+      return acc;
+    }, {});
+
+  // Calculate total in USD for the main cards
+  const totalRevenueUSD = Object.entries(revenueByCurrency).reduce((sum, [cur, amt]) => {
+    const rate = exchangeRates[cur]?.rate || 1;
+    return sum + (amt / rate);
+  }, 0);
+
+  const totalRefundsUSD = Object.entries(refundsByCurrency).reduce((sum, [cur, amt]) => {
+    const rate = exchangeRates[cur]?.rate || 1;
+    return sum + (amt / rate);
+  }, 0);
+
+  const netRevenueUSD = totalRevenueUSD;
 
   return (
     <div className="admin-dashboard">
       <h2 style={{ marginBottom: '1rem' }}>Admin Dashboard</h2>
 
       {/* Stats Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
         {[
           { label: 'Total Users', value: users.length, icon: '👥', color: '#a78bfa' },
           { label: 'Total Flights', value: flights.length, icon: '✈', color: '#c9b037' },
           { label: 'Active Bookings', value: confirmedBookings, icon: '📋', color: '#34d399' },
-          { label: 'Total Revenue', value: `$${revenue.toFixed(0)}`, icon: '💰', color: '#60a5fa' },
+          { 
+            label: 'Net Revenue (USD)', 
+            value: `$${netRevenueUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, 
+            icon: '💰', 
+            color: '#60a5fa',
+            breakdown: revenueByCurrency
+          },
+          { 
+            label: 'Total Refunded (USD)', 
+            value: `$${totalRefundsUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, 
+            icon: '💸', 
+            color: '#f43f5e',
+            breakdown: refundsByCurrency
+          },
         ].map(s => (
-          <div key={s.label} className="glass-card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span style={{ fontSize: '2rem' }}>{s.icon}</span>
-            <div>
-              <div style={{ color: s.color, fontSize: '1.5rem', fontWeight: '700' }}>{s.value}</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{s.label}</div>
+          <div key={s.label} className="glass-card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <span style={{ fontSize: '2rem' }}>{s.icon}</span>
+              <div>
+                <div style={{ color: s.color, fontSize: '1.5rem', fontWeight: '700' }}>{s.value}</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{s.label}</div>
+              </div>
             </div>
+            {s.breakdown && Object.keys(s.breakdown).length > 0 && (
+              <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.75rem' }}>
+                <div style={{ fontWeight: '600', marginBottom: '0.25rem', color: 'var(--text-muted)' }}>Breakdown:</div>
+                {Object.entries(s.breakdown).map(([cur, amt]) => (
+                  <div key={cur} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>{cur}:</span>
+                    <span style={{ fontWeight: '600' }}>{getCurrencySymbol(cur)}{amt.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -302,11 +403,16 @@ const AdminDashboard = () => {
       {/* Bookings Tab */}
       {activeTab === 'bookings' && (
         <div className="glass-card">
-          <h3 style={{ marginBottom: '1rem' }}>All Bookings <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: '400' }}>({allBookings.length} total)</span></h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h3 style={{ margin: 0 }}>All Bookings <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: '400' }}>({allBookings.length} total)</span></h3>
+            <button onClick={openCleanupModal} className="btn-secondary btn-sm" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}>
+              Clean Up Cancelled
+            </button>
+          </div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                {['Passenger', 'Flight', 'Route', 'Class', 'Seat', 'Payment', 'Price', 'Status'].map(h => (
+                {['Passenger', 'Flight', 'Route', 'Class', 'Seat', 'Payment', 'Price', 'Status', 'Action'].map(h => (
                   <th key={h} style={{ padding: '0.5rem 0.75rem', color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                 ))}
               </tr>
@@ -334,17 +440,24 @@ const AdminDashboard = () => {
                         {b.paymentMethod === 'AIRPORT' ? '🏢 Airport' : '💳 Online'}
                       </span>
                     </td>
-                    <td style={{ padding: '0.75rem', fontWeight: '700', color: 'var(--primary)' }}>${b.totalPrice?.toFixed(2) || '—'}</td>
+                    <td style={{ padding: '0.75rem', fontWeight: '700', color: 'var(--primary)' }}>
+                      {getCurrencySymbol(b.currency)}{b.totalPrice?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '—'}
+                    </td>
                     <td style={{ padding: '0.75rem' }}>
                       <span style={{ background: b.status === 'CONFIRMED' ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)', color: b.status === 'CONFIRMED' ? '#10b981' : '#f43f5e', borderRadius: '6px', padding: '0.2rem 0.5rem', fontSize: '0.78rem', fontWeight: '600' }}>
                         {b.status}
                       </span>
                     </td>
+                    <td style={{ padding: '0.75rem' }}>
+                      <button onClick={() => openDeleteBookingModal(b)} className="cancel-btn-text" style={{ fontSize: '0.8rem' }}>
+                        {b.status === 'CONFIRMED' ? 'Cancel \u0026 Refund' : 'Remove'}
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
               {allBookings.length === 0 && (
-                <tr><td colSpan={8} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No bookings yet.</td></tr>
+                <tr><td colSpan={9} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No bookings yet.</td></tr>
               )}
             </tbody>
           </table>
@@ -359,6 +472,28 @@ const AdminDashboard = () => {
         message={`Are you sure you want to permanently delete flight ${flightToDelete?.flightNumber} (${flightToDelete?.origin} → ${flightToDelete?.destination})? This cannot be undone.`}
         confirmText="Yes, Delete"
         cancelText="Keep Flight"
+      />
+
+      <Modal
+        isOpen={!!bookingToDelete}
+        onClose={() => setBookingToDelete(null)}
+        onConfirm={confirmDeleteBooking}
+        title={bookingToDelete?.status === 'CONFIRMED' ? 'Cancel Booking?' : 'Remove Booking?'}
+        message={
+          bookingToDelete?.status === 'CONFIRMED'
+          ? `Are you sure you want to cancel the booking for ${bookingToDelete?.user?.username || bookingToDelete?.user?.email || 'this passenger'}? This will free up their seat and issue a refund.`
+          : `Are you sure you want to permanently delete the booking for ${bookingToDelete?.user?.username || bookingToDelete?.user?.email || 'this passenger'}? This cannot be undone.`
+        }
+        confirmText={bookingToDelete?.status === 'CONFIRMED' ? 'Yes, Cancel \u0026 Refund' : 'Yes, Remove'}
+      />
+
+      <Modal
+        isOpen={isCleanupModalOpen}
+        onClose={() => setIsCleanupModalOpen(false)}
+        onConfirm={confirmCleanup}
+        title="Clean Up Bookings?"
+        message="This will permanently delete all cancelled bookings and bookings with missing flight data. Do you want to proceed?"
+        confirmText="Yes, Clean Up"
       />
     </div>
   );

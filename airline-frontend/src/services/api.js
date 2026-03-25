@@ -81,11 +81,17 @@ export const flightService = {
 };
 
 export const bookingService = {
-  book: (flightId, numSeats, flightClass, paymentMethod) => 
-    api.post('/bookings', { flightId, numSeats, flightClass, paymentMethod }),
+  book: (flightId, numSeats, flightClass, paymentMethod, currency = 'USD') => 
+    api.post('/bookings', { flightId, numSeats, flightClass, paymentMethod, currency }),
   getUserBookings: () => api.get('/bookings/user'),
   getOccupiedSeats: (flightId) => api.get(`/bookings/flight/${flightId}/seats`),
-  cancelBooking: (bookingId) => api.put(`/bookings/${bookingId}/cancel`)
+  cancelBooking: (bookingId) => api.put(`/bookings/${bookingId}/cancel`),
+  deleteBooking: (bookingId) => api.delete(`/bookings/${bookingId}`),
+  cleanupBookings: () => api.delete('/bookings/cleanup'),
+  archiveBooking: (bookingId) => api.put(`/bookings/${bookingId}/archive`),
+  archiveCleanupBookings: () => api.put('/bookings/cleanup/archive'),
+  archiveByAdmin: (bookingId) => api.put(`/bookings/${bookingId}/archive-admin`),
+  hardDeleteBooking: (bookingId) => api.delete(`/bookings/${bookingId}/permanent`),
 };
 
 export const paymentService = {
@@ -95,6 +101,8 @@ export const paymentService = {
 export const adminService = {
   getAllUsers:    () => api.get('/users/all'),
   getAllBookings: () => api.get('/bookings/all'),
+  getAllHistory:  () => api.get('/bookings/history'),
+  getAllPayments: () => api.get('/payments/all'),
   blockUser:     (id) => api.patch(`/users/${id}/block`),
 };
 

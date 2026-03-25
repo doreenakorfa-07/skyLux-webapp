@@ -17,17 +17,19 @@ public class Payment {
     private Booking booking;
 
     private Double amount;
+    private String currency; // USD, GHS, NGN, KES, ZAR
     private String transactionId;
     private String status; // SUCCESS, FAILED
     private LocalDateTime paymentDate;
 
     public Payment() {}
 
-    public Payment(String id, User user, Booking booking, Double amount, String transactionId, String status, LocalDateTime paymentDate) {
+    public Payment(String id, User user, Booking booking, Double amount, String currency, String transactionId, String status, LocalDateTime paymentDate) {
         this.id = id;
         this.user = user;
         this.booking = booking;
         this.amount = amount;
+        this.currency = currency;
         this.transactionId = transactionId;
         this.status = status;
         this.paymentDate = paymentDate;
@@ -41,6 +43,8 @@ public class Payment {
     public void setBooking(Booking booking) { this.booking = booking; }
     public Double getAmount() { return amount; }
     public void setAmount(Double amount) { this.amount = amount; }
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
     public String getTransactionId() { return transactionId; }
     public void setTransactionId(String transactionId) { this.transactionId = transactionId; }
     public String getStatus() { return status; }

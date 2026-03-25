@@ -12,7 +12,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/payments")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class PaymentController {
 
     @Autowired
@@ -27,5 +26,11 @@ public class PaymentController {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return paymentRepository.findByUser(user);
+    }
+
+    @GetMapping("/all")
+    public List<Payment> getAllPayments() {
+        // Simple role check could be added here, but usually handled by SecurityConfig
+        return paymentRepository.findAll();
     }
 }

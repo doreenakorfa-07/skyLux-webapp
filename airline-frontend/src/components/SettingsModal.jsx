@@ -6,12 +6,25 @@ const SettingsModal = ({ isOpen, onClose, userData, onUpdate }) => {
   const { showToast } = useToast();
   const [activeSection, setActiveSection] = useState('profile');
   const [loading, setLoading] = useState(false);
+  const [darkMode, setDarkMode] = useState(localStorage.getItem('theme') === 'dark');
   const [form, setForm] = useState({
     username: userData?.username || '',
     firstName: userData?.firstName || '',
     lastName: userData?.lastName || '',
     otherNames: userData?.otherNames || '',
+    bookingNotifications: userData?.bookingNotifications ?? true,
+    flightStatusNotifications: userData?.flightStatusNotifications ?? true,
   });
+
+  React.useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add('dark-mode');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.body.classList.remove('dark-mode');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [darkMode]);
 
   if (!isOpen) return null;
 
@@ -130,20 +143,29 @@ const SettingsModal = ({ isOpen, onClose, userData, onUpdate }) => {
               <div className="settings-section">
                 <h3>Notifications</h3>
                 <p className="settings-hint">Control how SkyLux communicates with you.</p>
-                <div className="settings-toggle-row">
+                <div className="settings-toggle-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                   <div>
                     <strong>Booking Confirmations</strong>
                     <p>Get notified when your flight is confirmed.</p>
                   </div>
-                  <div className="toggle-badge">Email</div>
+                  <label className="toggle-switch">
+                    <input type="checkbox" checked={form.bookingNotifications} onChange={(e) => setForm({...form, bookingNotifications: e.target.checked})} />
+                    <span className="slider round"></span>
+                  </label>
                 </div>
-                <div className="settings-toggle-row">
+                <div className="settings-toggle-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <strong>Flight Status Updates</strong>
                     <p>Alerts for delays or gate changes.</p>
                   </div>
-                  <div className="toggle-badge">Email</div>
+                  <label className="toggle-switch">
+                    <input type="checkbox" checked={form.flightStatusNotifications} onChange={(e) => setForm({...form, flightStatusNotifications: e.target.checked})} />
+                    <span className="slider round"></span>
+                  </label>
                 </div>
+                <button className="btn btn-primary settings-save-btn" onClick={handleSave} disabled={loading} style={{marginTop: '2rem'}}>
+                  {loading ? 'Saving...' : '✓ Save Changes'}
+                </button>
               </div>
             )}
 
@@ -151,12 +173,18 @@ const SettingsModal = ({ isOpen, onClose, userData, onUpdate }) => {
               <div className="settings-section">
                 <h3>Preferences</h3>
                 <p className="settings-hint">Customize your SkyLux experience.</p>
-                <div className="settings-info-card">
-                  <span className="info-icon">🌙</span>
-                  <div>
-                    <strong>Dark Mode</strong>
-                    <p>SkyLux uses an elegant dark theme by default for a premium experience.</p>
+                <div className="settings-toggle-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="settings-info-card" style={{ padding: 0, border: 'none', background: 'transparent', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <span className="info-icon" style={{ fontSize: '1.5rem' }}>🌙</span>
+                    <div>
+                      <strong>Dark Mode</strong>
+                      <p>Switch to a sophisticated dark theme.</p>
+                    </div>
                   </div>
+                  <label className="toggle-switch">
+                    <input type="checkbox" checked={darkMode} onChange={(e) => setDarkMode(e.target.checked)} />
+                    <span className="slider round"></span>
+                  </label>
                 </div>
               </div>
             )}
