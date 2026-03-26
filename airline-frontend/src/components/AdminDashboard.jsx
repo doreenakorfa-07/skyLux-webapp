@@ -429,7 +429,7 @@ const AdminDashboard = () => {
                 return (
                   <tr key={b.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <td style={{ padding: '0.75rem' }}>
-                      <strong>{b.user?.username || b.user?.email?.split('@')[0] || '—'}</strong>
+                      <strong>{[b.user?.firstName, b.user?.lastName].filter(Boolean).join(' ') || b.user?.username || '—'}</strong>
                       <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>{b.user?.email}</div>
                     </td>
                     <td style={{ padding: '0.75rem', fontWeight: '600' }}>{b.flight?.flightNumber || '—'}</td>
@@ -442,7 +442,7 @@ const AdminDashboard = () => {
                     <td style={{ padding: '0.75rem', fontWeight: '600', letterSpacing: '0.05em' }}>{b.seatNumber || '—'}</td>
                     <td style={{ padding: '0.75rem' }}>
                       <span style={{ background: b.paymentMethod === 'AIRPORT' ? 'rgba(251,191,36,0.1)' : 'rgba(52,211,153,0.1)', color: b.paymentMethod === 'AIRPORT' ? '#fbbf24' : '#34d399', borderRadius: '6px', padding: '0.2rem 0.5rem', fontSize: '0.78rem', fontWeight: '600' }}>
-                        {b.paymentMethod === 'AIRPORT' ? '🏢 Airport' : '💳 Online'}
+                        {b.paymentMethod === 'AIRPORT' ? '⏳ Pending' : '✅ Success'}
                       </span>
                     </td>
                     <td style={{ padding: '0.75rem', fontWeight: '700', color: 'var(--primary)' }}>

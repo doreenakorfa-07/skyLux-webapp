@@ -57,7 +57,7 @@ public class BookingService {
         java.util.List<Booking> savedBookings = new java.util.ArrayList<>();
 
         for (String seat : assignedSeats) {
-            Booking booking = new Booking(null, user, flight, LocalDateTime.now(), "CONFIRMED", seat, flightClass, totalPricePerSeat, currency);
+            Booking booking = new Booking(null, user, flight, LocalDateTime.now(), "CONFIRMED", seat, flightClass, totalPricePerSeat, currency, paymentMethod);
             
             // Update available seats for each ticket
             flight.setAvailableSeats(flight.getAvailableSeats() - 1);

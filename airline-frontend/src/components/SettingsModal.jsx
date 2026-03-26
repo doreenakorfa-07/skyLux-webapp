@@ -90,18 +90,18 @@ const SettingsModal = ({ isOpen, onClose, userData, onUpdate }) => {
                 <div className="settings-field-group">
                   <div className="settings-field">
                     <label htmlFor="username">Username</label>
-                    <input id="username" type="text" value={form.username} onChange={handleChange} placeholder="@yourhandle" />
+                    <input id="username" type="text" value={form.username} onChange={handleChange} placeholder="@miracleafoko" />
                   </div>
                 </div>
 
                 <div className="settings-field-group two-col">
                   <div className="settings-field">
                     <label htmlFor="firstName">First Name</label>
-                    <input id="firstName" type="text" value={form.firstName} onChange={handleChange} placeholder="Jane" />
+                    <input id="firstName" type="text" value={form.firstName} onChange={handleChange} placeholder="Miracle" />
                   </div>
                   <div className="settings-field">
                     <label htmlFor="lastName">Last Name</label>
-                    <input id="lastName" type="text" value={form.lastName} onChange={handleChange} placeholder="Doe" />
+                    <input id="lastName" type="text" value={form.lastName} onChange={handleChange} placeholder="Afoko" />
                   </div>
                 </div>
 

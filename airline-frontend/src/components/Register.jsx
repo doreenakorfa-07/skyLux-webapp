@@ -59,7 +59,7 @@ const Register = () => {
               <input 
                 id="firstName"
                 type="text" 
-                placeholder="Jane"
+                placeholder="Miracle"
                 value={formData.firstName} 
                 onChange={handleChange} 
                 required 
@@ -70,7 +70,7 @@ const Register = () => {
               <input 
                 id="lastName"
                 type="text" 
-                placeholder="Doe"
+                placeholder="Afoko"
                 value={formData.lastName} 
                 onChange={handleChange} 
                 required 
@@ -95,7 +95,7 @@ const Register = () => {
               <input 
                 id="username"
                 type="text" 
-                placeholder="janedoe"
+                placeholder="miracleafoko"
                 value={formData.username} 
                 onChange={handleChange} 
                 required 
@@ -106,7 +106,7 @@ const Register = () => {
               <input 
                 id="email"
                 type="email" 
-                placeholder="jane@example.com"
+                placeholder="miracle@example.com"
                 value={formData.email} 
                 onChange={handleChange} 
                 required 

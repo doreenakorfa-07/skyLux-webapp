@@ -1,0 +1,44 @@
+services:
+  # Backend Service
+  - type: web
+    name: skylux-api
+    runtime: java
+    plan: free
+    buildCommand: mvn clean install -DskipTests
+    startCommand: java -jar target/airline-api-1.0.0.jar
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: MONGODB_URI
+        sync: false # User must provide their own MongoDB Atlas URI
+      - key: FRONTEND_URL
+        fromService:
+          name: skylux-frontend
+          type: static
+          property: url
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+  # Frontend Service
+  - type: static
+    name: skylux-frontend
+    runtime: web
+    plan: free
+    buildCommand: npm install && npm run build
+    publishPath: airline-frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: skylux-api
+          type: web
+          property: url
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

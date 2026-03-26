@@ -67,14 +67,23 @@ public class DataInitializer implements CommandLineRunner {
         seedFlightIfMissing("SL223", "Paris",      "Lagos",       3, 6,  720.0,  250);
         seedFlightIfMissing("SL334", "Dubai",      "Nairobi",     4, 5,  450.0,  200);
 
-        // Seed some sample bookings if empty
-        if (bookingRepository.count() == 0) {
-            System.out.println("SkyLux: Bookings empty. Seeding samples...");
-            User member = userRepository.findByEmail("member@skylux.com").orElse(null);
-            Flight flight = flightRepository.findAll().stream().findFirst().orElse(null);
-            if (member != null && flight != null) {
-                bookingRepository.save(new Booking(null, member, flight, LocalDateTime.now().minusDays(1), "CONFIRMED", "12A", "BUSINESS", 850.0, "USD"));
-                bookingRepository.save(new Booking(null, member, flight, LocalDateTime.now().minusDays(2), "CONFIRMED", "14C", "ECONOMY", 450.0, "USD"));
+        // Seed some sample bookings if empty or missing
+        User member = userRepository.findByEmail("member@skylux.com").orElse(null);
+        Flight flight = flightRepository.findAll().stream().filter(f -> f.getFlightNumber().equals("SL101")).findFirst()
+                .orElse(flightRepository.findAll().stream().findFirst().orElse(null));
+        
+        if (member != null && flight != null) {
+            // Check if these specific seats are already booked on this flight by this user
+            boolean exists1 = bookingRepository.findAll().stream()
+                    .anyMatch(b -> b.getUser().getId().equals(member.getId()) && b.getFlight().getId().equals(flight.getId()) && "12A".equals(b.getSeatNumber()));
+            if (!exists1) {
+                bookingRepository.save(new Booking(null, member, flight, LocalDateTime.now().minusDays(1), "CONFIRMED", "12A", "BUSINESS", 850.0, "USD", "ONLINE"));
+            }
+
+            boolean exists2 = bookingRepository.findAll().stream()
+                    .anyMatch(b -> b.getUser().getId().equals(member.getId()) && b.getFlight().getId().equals(flight.getId()) && "14C".equals(b.getSeatNumber()));
+            if (!exists2) {
+                bookingRepository.save(new Booking(null, member, flight, LocalDateTime.now().minusDays(2), "CONFIRMED", "14C", "ECONOMY", 450.0, "USD", "ONLINE"));
             }
         }
         

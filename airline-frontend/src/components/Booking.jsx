@@ -79,6 +79,22 @@ const Booking = () => {
     }
   }, [flight, selectedClass, numSeats]);
 
+  const isCardExpired = (expiry) => {
+    if (!expiry || !expiry.includes('/')) return true;
+    const [month, year] = expiry.split('/').map(s => s.trim());
+    if (!month || !year || month.length !== 2 || year.length !== 2) return true;
+    
+    const expMonth = parseInt(month, 10);
+    const expYear = parseInt('20' + year, 10);
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+    
+    if (expYear < currentYear) return true;
+    if (expYear === currentYear && expMonth < currentMonth) return true;
+    return false;
+  };
+
   const handleStep1Submit = (e) => {
     e.preventDefault();
     if (!localStorage.getItem('token')) {
@@ -90,9 +106,16 @@ const Booking = () => {
 
   const handlePayment = async (e) => {
     e.preventDefault();
-    if (paymentMethod === 'ONLINE' && paymentDetails.number.replace(/\s+/g, '').length !== 16) {
-      showToast("Please enter a valid 16-digit card number.", "error");
-      return;
+    if (paymentMethod === 'ONLINE') {
+      const cleanNumber = paymentDetails.number.replace(/\s+/g, '');
+      if (cleanNumber.length !== 16) {
+        showToast("Please enter a valid 16-digit card number.", "error");
+        return;
+      }
+      if (isCardExpired(paymentDetails.expiry)) {
+        showToast("Transaction Declined: This card has expired.", "error");
+        return;
+      }
     }
     
     setProcessing(true);
@@ -234,7 +257,7 @@ const Booking = () => {
                         <label>Cardholder Name</label>
                         <input 
                           type="text" 
-                          placeholder="Full name on card" 
+                          placeholder="Miracle Afoko" 
                           value={paymentDetails.name}
                           onChange={(e) => setPaymentDetails({ ...paymentDetails, name: e.target.value })}
                           required 

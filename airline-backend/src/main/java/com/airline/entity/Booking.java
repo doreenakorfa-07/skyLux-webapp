@@ -22,12 +22,13 @@ public class Booking {
     private String flightClass; // ECONOMY, PREMIUM_ECONOMY, BUSINESS, FIRST
     private Double totalPrice;
     private String currency; // USD, GHS, NGN, KES, ZAR
+    private String paymentMethod; // ONLINE, AIRPORT
     private boolean archivedByUser;
     private boolean archivedByAdmin;
 
     public Booking() {}
 
-    public Booking(String id, User user, Flight flight, LocalDateTime bookingDate, String status, String seatNumber, String flightClass, Double totalPrice, String currency) {
+    public Booking(String id, User user, Flight flight, LocalDateTime bookingDate, String status, String seatNumber, String flightClass, Double totalPrice, String currency, String paymentMethod) {
         this.id = id;
         this.user = user;
         this.flight = flight;
@@ -37,6 +38,7 @@ public class Booking {
         this.flightClass = flightClass;
         this.totalPrice = totalPrice;
         this.currency = currency;
+        this.paymentMethod = paymentMethod;
     }
 
     // Getters and Setters
@@ -58,6 +60,8 @@ public class Booking {
     public void setTotalPrice(Double totalPrice) { this.totalPrice = totalPrice; }
     public String getCurrency() { return currency; }
     public void setCurrency(String currency) { this.currency = currency; }
+    public String getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
     public boolean isArchivedByUser() { return archivedByUser; }
     public void setArchivedByUser(boolean archivedByUser) { this.archivedByUser = archivedByUser; }
     public boolean isArchivedByAdmin() { return archivedByAdmin; }
