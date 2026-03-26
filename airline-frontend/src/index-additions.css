@@ -132,3 +132,282 @@ body.dark-mode .history-grid .status-cancelled {
   background: rgba(244, 63, 94, 0.2);
   color: #f43f5e;
 }
+
+.settings-info-card-compact {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.settings-save-btn {
+  margin-top: 2rem;
+}
+
+/* Admin Dashboard Responsive Classes */
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.admin-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 1rem;
+}
+
+.admin-table-wrapper table {
+  min-width: 800px; /* Ensure tables don't squish too much */
+}
+
+@media (max-width: 1200px) {
+  .admin-stats-grid { grid-template-columns: repeat(3, 1fr); }
+  .admin-form-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .admin-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .admin-form-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .admin-stats-grid { grid-template-columns: 1fr; }
+}
+
+
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  z-index: 1002;
+}
+
+.hamburger-line {
+  width: 24px;
+  height: 2px;
+  background-color: var(--primary);
+  transition: all 0.3s ease;
+  border-radius: 2px;
+}
+
+body.dark-mode .hamburger-line {
+  background-color: white;
+}
+
+.mobile-menu-toggle.active .hamburger-line:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+
+.mobile-menu-toggle.active .hamburger-line:nth-child(2) {
+  opacity: 0;
+}
+
+.mobile-menu-toggle.active .hamburger-line:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
+}
+
+
+/* --- Responsive Enhancements --- */
+
+/* Tablet & Smaller (1024px) */
+@media (max-width: 1024px) {
+  .hero-title { font-size: 4rem; }
+  .container { padding: 1.5rem; }
+  .booking-grid { gap: 2rem; }
+  .profile-layout { grid-template-columns: 1fr; }
+  .user-info-card { max-width: 400px; margin: 0 auto; }
+}
+
+/* Mobile (768px) */
+@media (max-width: 768px) {
+  :root {
+    --container-padding: 1rem;
+  }
+
+  .container { padding: var(--container-padding); }
+  
+  .navbar {
+    padding: 0.75rem 1rem;
+    position: relative;
+    z-index: 1001;
+  }
+
+  .navbar-logo .logo-text, 
+  .navbar-logo .logo-suffix {
+    font-size: 1.25rem;
+  }
+
+    .mobile-menu-toggle {
+      display: flex;
+    }
+
+    .navbar-links {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--glass);
+      backdrop-filter: blur(20px);
+      flex-direction: column;
+      padding: 2rem;
+      gap: 1.5rem;
+      border-radius: 0 0 1.5rem 1.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-top: none;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+      display: none; /* Hidden by default on mobile */
+      transform: translateY(-10px);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+
+    .navbar-links.mobile-show {
+      display: flex;
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    body.dark-mode .navbar-links {
+      background: rgba(15, 23, 42, 0.95);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .currency-selector {
+      margin-left: 0 !important;
+      width: 100%;
+    }
+    
+    .currency-selector select {
+      width: 100%;
+    }
+
+    .hero-section { padding: 4rem 1rem 6rem; }
+  .hero-title { font-size: 3rem; }
+  .hero-subtitle { font-size: 1.1rem; margin-bottom: 2.5rem; }
+
+  /* Stack Search Form */
+  .search-form {
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 1.5rem !important;
+  }
+  
+  .search-divider {
+    display: none;
+  }
+
+  .search-btn {
+    width: 100%;
+    height: 54px;
+  }
+
+  /* Grid Adjustments */
+  .destinations-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .flight-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Typography & Cards */
+  .section-title { font-size: 2rem; margin-bottom: 2rem; }
+  .glass-card { padding: 1.5rem; }
+  
+  .cta-card { padding: 3rem 1.5rem !important; }
+  .cta-title { font-size: 2rem; }
+  
+  /* Flight List refinements */
+  .route-info { font-size: 1.25rem; }
+  .price-tag .amount { font-size: 1.8rem; }
+  .flight-card-header { position: relative; }
+  
+  /* Booking page refinements */
+  .flight-summary-card { padding: 1.5rem !important; }
+  .summary-title { font-size: 1.5rem; }
+  .price-display .value { font-size: 2rem; }
+  .class-grid { grid-template-columns: 1fr; }
+  
+  /* Profile page refinements */
+  .profile-layout { grid-template-columns: 1fr; gap: 2rem; }
+  .user-info-card { padding: 2rem 1.5rem !important; }
+  .history-item { padding: 1.5rem !important; }
+  .history-meta { flex-wrap: wrap; gap: 1rem; }
+  
+  /* Modal responsive */
+  .modal-content {
+    padding: 1.5rem !important;
+    width: 95%;
+  }
+
+  /* Settings Modal Mobile Improvements */
+  .settings-modal {
+    max-height: 95vh;
+    border-radius: 1.5rem !important;
+  }
+
+  .settings-header {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .settings-body {
+    flex-direction: column;
+  }
+
+  .settings-nav {
+    width: 100% !important;
+    flex-direction: row !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.75rem 1rem !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    gap: 0.5rem;
+  }
+
+  .settings-nav-item {
+    white-space: nowrap;
+    width: auto !important;
+    padding: 0.5rem 1rem !important;
+  }
+
+  .settings-content {
+    padding: 1.5rem !important;
+  }
+
+  .settings-field-group.two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-toggle-row {
+    flex-direction: row; 
+    gap: 1rem;
+  }
+}
+
+/* Small Mobile (480px) */
+@media (max-width: 480px) {
+  .navbar-logo .logo-suffix { display: none; }
+  .hero-title { font-size: 2.5rem; }
+  .route-info { font-size: 1.1rem; }
+  .price-tag .amount { font-size: 1.5rem; }
+  .flight-card-details { gap: 1rem; }
+  .history-item { flex-direction: column; align-items: flex-start; gap: 1rem; text-align: left; }
+  .history-status-area { text-align: left; }
+}
+

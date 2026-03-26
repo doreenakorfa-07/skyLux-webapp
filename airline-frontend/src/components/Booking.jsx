@@ -231,17 +231,7 @@ const Booking = () => {
                   {paymentMethod === 'ONLINE' && (
                     <div className="fade-in">
                       <div className="input-group">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <label>Cardholder Name</label>
-                          <button 
-                            type="button" 
-                            className="text-link" 
-                            style={{ fontSize: '0.75rem', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                            onClick={() => setPaymentDetails({ number: '4242424242424242', expiry: '12/28', cvv: '123', name: 'Test User' })}
-                          >
-                            Use Test Card
-                          </button>
-                        </div>
+                        <label>Cardholder Name</label>
                         <input 
                           type="text" 
                           placeholder="Full name on card" 

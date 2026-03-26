@@ -35,12 +35,20 @@ const LandingPage = () => {
             Experience unparalleled comfort and seamless travel with SkyLux Airways. Your adventure starts here.
           </p>
           <div className="hero-cta" style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '2rem' }}>
-            <button onClick={() => navigate('/login')} className="btn btn-primary" style={{ padding: '1rem 3rem', fontSize: '1.2rem' }}>
-              Sign In
-            </button>
-            <button onClick={() => navigate('/register')} className="btn btn-accent" style={{ padding: '1rem 3rem', fontSize: '1.2rem' }}>
-              Create Account
-            </button>
+            {localStorage.getItem('token') ? (
+              <button onClick={() => navigate('/welcome')} className="btn btn-primary" style={{ padding: '1rem 3rem', fontSize: '1.2rem' }}>
+                Go to Dashboard
+              </button>
+            ) : (
+              <>
+                <button onClick={() => navigate('/login')} className="btn btn-primary" style={{ padding: '1rem 3rem', fontSize: '1.2rem' }}>
+                  Sign In
+                </button>
+                <button onClick={() => navigate('/register')} className="btn btn-accent" style={{ padding: '1rem 3rem', fontSize: '1.2rem' }}>
+                  Create Account
+                </button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -77,9 +85,15 @@ const LandingPage = () => {
         <div className="cta-card glass-card fade-in">
           <h2 className="cta-title">Ready to Take Off?</h2>
           <p className="cta-text">Join thousands of happy travelers and book your next flight today.</p>
-          <button onClick={() => navigate('/register')} className="btn btn-accent">
-            Get Started Now
-          </button>
+          {localStorage.getItem('token') ? (
+            <button onClick={() => navigate('/flights')} className="btn btn-accent">
+              Explore Flights
+            </button>
+          ) : (
+            <button onClick={() => navigate('/register')} className="btn btn-accent">
+              Get Started Now
+            </button>
+          )}
         </div>
       </section>
 

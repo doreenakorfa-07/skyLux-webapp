@@ -13,6 +13,7 @@ const Profile = () => {
   const [uploading, setUploading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState(null);
   const { showToast } = useToast();
   const fileInputRef = useRef(null);
@@ -90,6 +91,22 @@ const Profile = () => {
     }
   };
 
+  const handleRemovePhoto = async () => {
+    try {
+      setUploading(true);
+      await userService.deleteProfilePicture();
+      localStorage.removeItem('profilePictureUrl');
+      setProfilePic('');
+      setIsLightboxOpen(false);
+      showToast('Profile picture removed.', 'success');
+    } catch (err) {
+      console.error("Remove Photo Error:", err);
+      showToast(`Failed to remove image: ${err.response?.status || err.message}`, 'error');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const openCancelModal = (bookingId) => {
     setBookingToCancel(bookingId);
     setIsModalOpen(true);
@@ -145,7 +162,13 @@ const Profile = () => {
         {/* User Sidebar */}
         <aside className="user-info-card glass-card">
           <button className="settings-gear-btn" onClick={() => setIsSettingsOpen(true)} title="Account Settings">⚙</button>
-          <div className="avatar-container" onClick={() => fileInputRef.current.click()}>
+          <div className="avatar-container" onClick={() => {
+            if (profilePic) {
+              setIsLightboxOpen(true);
+            } else {
+              fileInputRef.current.click();
+            }
+          }}>
             <div className="profile-avatar">
               {profilePic ? (
                 <img src={profilePic} alt="Profile" />
@@ -154,7 +177,7 @@ const Profile = () => {
               )}
             </div>
             <div className="upload-overlay">
-              {uploading ? 'Updating...' : 'Change Photo'}
+              {uploading ? 'Updating...' : (profilePic ? 'View Photo' : 'Upload Photo')}
             </div>
           </div>
           
@@ -261,6 +284,46 @@ const Profile = () => {
           )}
         </main>
       </div>
+
+      {isLightboxOpen && profilePic && (
+        <div className="modal-overlay fade-in" onClick={() => setIsLightboxOpen(false)} style={{ zIndex: 3000 }}>
+          <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
+            <button 
+              onClick={() => setIsLightboxOpen(false)} 
+              style={{ position: 'absolute', top: '-40px', right: '0', background: 'none', border: 'none', color: 'white', fontSize: '2.5rem', cursor: 'pointer', lineHeight: 1 }}
+            >
+              ×
+            </button>
+            <img 
+              src={profilePic} 
+              alt="Profile Large" 
+              style={{ maxWidth: '90vw', maxHeight: '70vh', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }} 
+            />
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+              <button 
+                className="btn btn-accent" 
+                style={{ padding: '0.75rem 2rem' }}
+                onClick={() => {
+                  setIsLightboxOpen(false);
+                  fileInputRef.current.click();
+                }}
+              >
+                Change Photo
+              </button>
+              <button 
+                className="btn fade-in" 
+                style={{ background: 'transparent', border: '1px solid #f43f5e', color: '#f43f5e', padding: '0.75rem 2rem', transition: 'all 0.3s' }}
+                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(244, 63, 94, 0.1)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                onClick={handleRemovePhoto}
+                disabled={uploading}
+              >
+                {uploading ? 'Removing...' : 'Remove Photo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Modal 
         isOpen={isModalOpen}

@@ -63,6 +63,16 @@ public class UserController {
         return userRepository.save(user);
     }
 
+    @DeleteMapping("/profile-picture")
+    public User deleteProfilePicture() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setProfilePictureUrl(null);
+        return userRepository.save(user);
+    }
+
     @PatchMapping("/me")
     public User updateCurrentUser(@RequestBody Map<String, Object> updates) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();

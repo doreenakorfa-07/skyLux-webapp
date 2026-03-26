@@ -4,10 +4,19 @@ import FlightSearch from './FlightSearch';
 
 const Welcome = () => {
   const navigate = useNavigate();
-  const username = localStorage.getItem('username');
+  const [userName, setUserName] = React.useState(localStorage.getItem('username') || '');
   const email = localStorage.getItem('email') || 'Traveler';
   const role = localStorage.getItem('role');
-  const displayName = username || email.split('@')[0];
+
+  React.useEffect(() => {
+    const handleUpdate = () => {
+      setUserName(localStorage.getItem('username') || '');
+    };
+    window.addEventListener('userUpdate', handleUpdate);
+    return () => window.removeEventListener('userUpdate', handleUpdate);
+  }, []);
+
+  const displayName = userName || email.split('@')[0];
   const capitalizedName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
 
   return (

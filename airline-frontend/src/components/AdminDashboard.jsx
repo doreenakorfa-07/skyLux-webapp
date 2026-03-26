@@ -188,7 +188,7 @@ const AdminDashboard = () => {
       <h2 style={{ marginBottom: '1rem' }}>Admin Dashboard</h2>
 
       {/* Stats Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
+      <div className="admin-stats-grid">
         {[
           { label: 'Total Users', value: users.length, icon: '👥', color: '#a78bfa' },
           { label: 'Total Flights', value: flights.length, icon: '✈', color: '#c9b037' },
@@ -265,7 +265,7 @@ const AdminDashboard = () => {
         <>
           <div className="glass-card" style={{ marginBottom: '2rem' }}>
             <h3>Add New Flight</h3>
-            <form onSubmit={handleAddFlight} style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginTop: '1rem' }}>
+            <form onSubmit={handleAddFlight} className="admin-form-grid">
               {[
                 { label: 'Flight Num', key: 'flightNumber', type: 'text' },
                 { label: 'Origin', key: 'origin', type: 'text' },
@@ -295,7 +295,8 @@ const AdminDashboard = () => {
 
           <div className="glass-card">
             <h3>Existing Flights</h3>
-            <table style={{ width: '100%', marginTop: '1rem', borderCollapse: 'collapse' }}>
+            <div className="admin-table-wrapper">
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                   {['Flight', 'Route', 'First', 'Business', 'Premium Eco.', 'Economy', 'Total Seats', 'Action'].map(h => (
@@ -338,6 +339,7 @@ const AdminDashboard = () => {
               </tbody>
             </table>
           </div>
+          </div>
         </>
       )}
 
@@ -345,7 +347,8 @@ const AdminDashboard = () => {
       {activeTab === 'users' && (
         <div className="glass-card">
           <h3 style={{ marginBottom: '1rem' }}>Registered Users <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: '400' }}>({users.length} total)</span></h3>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="admin-table-wrapper">
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                 {['Username', 'Full Name', 'Email', 'Role', 'Bookings', 'Status', 'Action'].map(h => (
@@ -397,6 +400,7 @@ const AdminDashboard = () => {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -409,7 +413,8 @@ const AdminDashboard = () => {
               Clean Up Cancelled
             </button>
           </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="admin-table-wrapper">
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                 {['Passenger', 'Flight', 'Route', 'Class', 'Seat', 'Payment', 'Price', 'Status', 'Action'].map(h => (
@@ -461,6 +466,7 @@ const AdminDashboard = () => {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

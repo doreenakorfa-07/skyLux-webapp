@@ -36,7 +36,11 @@ const SettingsModal = ({ isOpen, onClose, userData, onUpdate }) => {
     setLoading(true);
     try {
       const res = await userService.updateUserProfile(form);
+      if (res.data.username) {
+        localStorage.setItem('username', res.data.username);
+      }
       onUpdate(res.data);
+      window.dispatchEvent(new Event('userUpdate')); // Notify other components
       showToast('Profile updated successfully!', 'success');
       onClose();
     } catch (err) {
@@ -143,7 +147,7 @@ const SettingsModal = ({ isOpen, onClose, userData, onUpdate }) => {
               <div className="settings-section">
                 <h3>Notifications</h3>
                 <p className="settings-hint">Control how SkyLux communicates with you.</p>
-                <div className="settings-toggle-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <div className="settings-toggle-row">
                   <div>
                     <strong>Booking Confirmations</strong>
                     <p>Get notified when your flight is confirmed.</p>
@@ -153,7 +157,7 @@ const SettingsModal = ({ isOpen, onClose, userData, onUpdate }) => {
                     <span className="slider round"></span>
                   </label>
                 </div>
-                <div className="settings-toggle-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="settings-toggle-row">
                   <div>
                     <strong>Flight Status Updates</strong>
                     <p>Alerts for delays or gate changes.</p>
@@ -163,7 +167,7 @@ const SettingsModal = ({ isOpen, onClose, userData, onUpdate }) => {
                     <span className="slider round"></span>
                   </label>
                 </div>
-                <button className="btn btn-primary settings-save-btn" onClick={handleSave} disabled={loading} style={{marginTop: '2rem'}}>
+                <button className="btn btn-primary settings-save-btn" onClick={handleSave} disabled={loading}>
                   {loading ? 'Saving...' : '✓ Save Changes'}
                 </button>
               </div>
@@ -173,9 +177,9 @@ const SettingsModal = ({ isOpen, onClose, userData, onUpdate }) => {
               <div className="settings-section">
                 <h3>Preferences</h3>
                 <p className="settings-hint">Customize your SkyLux experience.</p>
-                <div className="settings-toggle-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div className="settings-info-card" style={{ padding: 0, border: 'none', background: 'transparent', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <span className="info-icon" style={{ fontSize: '1.5rem' }}>🌙</span>
+                <div className="settings-toggle-row">
+                  <div className="settings-info-card-compact">
+                    <span className="info-icon">🌙</span>
                     <div>
                       <strong>Dark Mode</strong>
                       <p>Switch to a sophisticated dark theme.</p>

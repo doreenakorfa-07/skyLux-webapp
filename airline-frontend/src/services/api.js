@@ -68,7 +68,8 @@ export const userService = {
   updateUserProfile: (updates) => api.patch('/users/me', updates),
   uploadProfilePicture: (formData) => api.post('/users/profile-picture', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
-  })
+  }),
+  deleteProfilePicture: () => api.delete('/users/profile-picture')
 };
 
 export const flightService = {
