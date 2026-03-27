@@ -54,7 +54,18 @@ public class WebSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174", frontendUrl));
+        config.addAllowedOrigin("http://localhost:5173");
+        config.addAllowedOrigin("http://127.0.0.1:5173");
+        config.addAllowedOrigin("http://localhost:5174");
+        config.addAllowedOrigin("http://127.0.0.1:5174");
+        if (frontendUrl != null && !frontendUrl.isEmpty()) {
+            config.addAllowedOrigin(frontendUrl);
+            if (frontendUrl.endsWith("/")) {
+                config.addAllowedOrigin(frontendUrl.substring(0, frontendUrl.length() - 1));
+            } else {
+                config.addAllowedOrigin(frontendUrl + "/");
+            }
+        }
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

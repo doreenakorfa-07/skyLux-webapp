@@ -33,10 +33,7 @@ services:
     publishPath: airline-frontend/dist
     envVars:
       - key: VITE_API_URL
-        fromService:
-          name: skylux-api
-          type: web
-          property: url
+        value: https://skylux-webapp.onrender.com/api
     routes:
       - type: rewrite
         source: /*
