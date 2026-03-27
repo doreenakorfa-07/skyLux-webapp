@@ -2,15 +2,14 @@ services:
   # Backend Service
   - type: web
     name: skylux-api
-    runtime: java
+    runtime: docker
+    dockerContext: airline-backend
     plan: free
-    buildCommand: mvn clean install -DskipTests
-    startCommand: java -jar target/airline-api-1.0.0.jar
     envVars:
       - key: PORT
         value: 8080
       - key: MONGODB_URI
-        sync: false # User must provide their own MongoDB Atlas URI
+        value: mongodb://doreen_db:Ada3356768@ac-vlnjdhr-shard-00-00.6fagqtt.mongodb.net:27017,ac-vlnjdhr-shard-00-01.6fagqtt.mongodb.net:27017,ac-vlnjdhr-shard-00-02.6fagqtt.mongodb.net:27017/airline_db?ssl=true&replicaSet=atlas-11gjsh-shard-0&authSource=admin&appName=Cluster0
       - key: FRONTEND_URL
         fromService:
           name: skylux-frontend
@@ -19,11 +18,11 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: CLOUDINARY_CLOUD_NAME
-        sync: false
+        value: dgnvtrxct
       - key: CLOUDINARY_API_KEY
-        sync: false
+        value: 286467827619326
       - key: CLOUDINARY_API_SECRET
-        sync: false
+        value: 3MrqU2AIP8Y4b7W6_R22TR8L2WQ
 
   # Frontend Service
   - type: static
