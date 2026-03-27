@@ -54,18 +54,22 @@ public class WebSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOrigin("http://localhost:5173");
-        config.addAllowedOrigin("http://127.0.0.1:5173");
-        config.addAllowedOrigin("http://localhost:5174");
-        config.addAllowedOrigin("http://127.0.0.1:5174");
+        
+        // Broadly allow all Render domains to resolve persistent CORS issues in production
+        config.setAllowedOriginPatterns(List.of(
+            "http://localhost:[*]", 
+            "http://127.0.0.1:[*]", 
+            "https://*.onrender.com"
+        ));
+
+        // Use frontendUrl if provided
         if (frontendUrl != null && !frontendUrl.isEmpty()) {
             config.addAllowedOrigin(frontendUrl);
             if (frontendUrl.endsWith("/")) {
                 config.addAllowedOrigin(frontendUrl.substring(0, frontendUrl.length() - 1));
-            } else {
-                config.addAllowedOrigin(frontendUrl + "/");
             }
         }
+
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
